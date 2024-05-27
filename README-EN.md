@@ -3,7 +3,7 @@
 >[Русский Readme](README.md)
 ## Description
 This bot automatically clicks, activates bonuses, automatically buys the most profitable upgrades, supports multiaccounts and proxies.
-My tg channel - https://https://t.me/+Dz4YR5Ho_701MjIy
+My tg channel - https://t.me/+Dz4YR5Ho_701MjIy
 
 ## Installation
 1. Download file from github.
