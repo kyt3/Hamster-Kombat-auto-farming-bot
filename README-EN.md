@@ -8,10 +8,9 @@ My tg channel - https://https://t.me/+Dz4YR5Ho_701MjIy
 ## Installation
 1. Download file from github.
 2. Download Python 3.11
-3. Open cmd (or terminal)
-4. Open INSTALL.bat
-5. Open .env file 
-6. Get API_ID and API_HASH (https://my.telegram.org/auth?to=apps)
+3. Open INSTALL.bat
+4. Open .env file 
+5. Get API_ID and API_HASH (https://my.telegram.org/auth?to=apps)
 
 ## Settings
 | Setting                  | Description                                                                                  |
