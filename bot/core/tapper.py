@@ -370,51 +370,60 @@ class Tapper:
                                 continue
 
                         if settings.AUTO_UPGRADE is True:
-                            upgrades = await self.get_upgrades(http_client=http_client)
+                            resort = True
+                            while resort:
+                                upgrades = await self.get_upgrades(http_client=http_client)
 
-                            available_upgrades = [
-                                data for data in upgrades
-                                if data['isAvailable'] is True
-                                and data['isExpired'] is False
-                                and data.get('cooldownSeconds', 0) == 0
-                                and data.get('maxLevel', data['level']) >= data['level']
-                                and (data.get('condition') is None
-                                     or data['condition'].get('_type') != 'SubscribeTelegramChannel')
-                            ]
+                                available_upgrades = [
+                                    data for data in upgrades
+                                    if data['isAvailable'] is True
+                                    and data['isExpired'] is False
+                                    and data.get('cooldownSeconds', 0) == 0
+                                    and data.get('maxLevel', data['level']) >= data['level']
+                                    and (data.get('condition') is None
+                                         or data['condition'].get('_type') != 'SubscribeTelegramChannel')
+                                ]
 
-                            queue = []
+                                queue = []
 
-                            for upgrade in available_upgrades:
-                                upgrade_id = upgrade['id']
-                                level = upgrade['level']
-                                price = upgrade['price']
-                                profit = upgrade['profitPerHourDelta']
+                                for upgrade in available_upgrades:
+                                    upgrade_id = upgrade['id']
+                                    level = upgrade['level']
+                                    price = upgrade['price']
+                                    profit = upgrade['profitPerHourDelta']
 
-                                significance = profit / price if price > 0 else 0
+                                    significance = profit / price if price > 0 else 0
 
-                                if balance > price and level <= settings.MAX_LEVEL:
                                     queue.append([upgrade_id, significance, level, price, profit])
 
-                            queue.sort(key=operator.itemgetter(1), reverse=True)
+                                queue.sort(key=operator.itemgetter(1), reverse=True)
 
-                            for upgrade in queue:
-                                if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
-                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[0]}</e>")
-                                    await asyncio.sleep(delay=5)
+                                if len(queue) == 0:
+                                    break
 
-                                    status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
+                                count = 0
+                                for upgrade in queue:
+                                    if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
+                                        logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[0]}</e>")
+                                        await asyncio.sleep(delay=5)
 
-                                    if status is True:
-                                        earn_on_hour += upgrade[4]
-                                        balance -= upgrade[3]
-                                        logger.success(
-                                            f"{self.session_name} | "
-                                            f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
+                                        status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
 
-                                        await asyncio.sleep(delay=1)
+                                        if status is True:
+                                            earn_on_hour += upgrade[4]
+                                            balance -= upgrade[3]
+                                            logger.success(
+                                                f"{self.session_name} | "
+                                                f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
+                                                f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
 
-                                continue
+                                            await asyncio.sleep(delay=1)
+                                            break
+
+                                    count += 1
+                                    if count == 10 or count == len(queue):
+                                        resort = False
+                                        break
 
                         if available_energy < settings.MIN_AVAILABLE_ENERGY:
                             logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
