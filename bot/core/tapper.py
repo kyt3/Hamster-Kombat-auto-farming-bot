@@ -283,45 +283,45 @@ class Tapper:
                     if time() - access_token_created_time >= 3600:
                         access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
-                        if not access_token:
-                            continue
+                    if not access_token:
+                        continue
 
-                        http_client.headers["Authorization"] = f"Bearer {access_token}"
+                    http_client.headers["Authorization"] = f"Bearer {access_token}"
 
-                        access_token_created_time = time()
+                    access_token_created_time = time()
 
-                        profile_data = await self.get_profile_data(http_client=http_client)
+                    profile_data = await self.get_profile_data(http_client=http_client)
 
-                        if not profile_data:
-                            continue
+                    if not profile_data:
+                        continue
 
-                        exchange_id = profile_data.get('exchangeId')
-                        if not exchange_id:
-                            status = await self.select_exchange(http_client=http_client, exchange_id="bybit")
-                            if status is True:
-                                logger.success(f"{self.session_name} | Successfully selected exchange <y>Bybit</y>")
+                    exchange_id = profile_data.get('exchangeId')
+                    if not exchange_id:
+                        status = await self.select_exchange(http_client=http_client, exchange_id="bybit")
+                        if status is True:
+                            logger.success(f"{self.session_name} | Successfully selected exchange <y>Bybit</y>")
 
-                        last_passive_earn = profile_data['lastPassiveEarn']
-                        earn_on_hour = profile_data['earnPassivePerHour']
+                    last_passive_earn = profile_data['lastPassiveEarn']
+                    earn_on_hour = profile_data['earnPassivePerHour']
 
-                        logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn}</g> | "
-                                    f"Earn every hour: <y>{earn_on_hour}</y>")
+                    logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn}</g> | "
+                                f"Earn every hour: <y>{earn_on_hour}</y>")
 
-                        available_energy = profile_data.get('availableTaps', 0)
-                        balance = int(profile_data.get('balanceCoins', 0))
+                    available_energy = profile_data.get('availableTaps', 0)
+                    balance = int(profile_data.get('balanceCoins', 0))
 
-                        tasks = await self.get_tasks(http_client=http_client)
+                    tasks = await self.get_tasks(http_client=http_client)
 
-                        daily_task = tasks[-1]
-                        rewards = daily_task['rewardsByDays']
-                        is_completed = daily_task['isCompleted']
-                        days = daily_task['days']
+                    daily_task = tasks[-1]
+                    rewards = daily_task['rewardsByDays']
+                    is_completed = daily_task['isCompleted']
+                    days = daily_task['days']
 
-                        if is_completed is False:
-                            status = await self.get_daily(http_client=http_client)
-                            if status is True:
-                                logger.success(f"{self.session_name} | Successfully get daily reward | "
-                                               f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
+                    if is_completed is False:
+                        status = await self.get_daily(http_client=http_client)
+                        if status is True:
+                            logger.success(f"{self.session_name} | Successfully get daily reward | "
+                                           f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
 
                     if settings.AUTO_UPGRADE is True:
                         resort = True
@@ -387,9 +387,6 @@ class Tapper:
                                                            available_energy=available_energy,
                                                            taps=taps)
 
-                        logger.info(f"Sleep {sleep_between_clicks}s")
-                        await asyncio.sleep(delay=sleep_between_clicks)
-
                         if not player_data:
                             continue
 
@@ -400,11 +397,15 @@ class Tapper:
                         total = int(player_data.get('totalCoins', 0))
                         earn_on_hour = player_data['earnPassivePerHour']
 
+                        logger.success(f"{self.session_name} | Successful tapped! | "
+                                       f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | "
+                                       f"Earn every hour: <y>{earn_on_hour}</y> | Total: <e>{total}</e>")
+
+                        logger.info(f"Sleep {sleep_between_clicks}s")
+                        await asyncio.sleep(delay=sleep_between_clicks)
+
                     boosts = await self.get_boosts(http_client=http_client)
                     energy_boost = next((boost for boost in boosts if boost['id'] == 'BoostFullAvailableTaps'), {})
-
-                    logger.success(f"{self.session_name} | Successful tapped! | "
-                                   f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | Total: <e>{total}</e>")
 
                     if (settings.APPLY_DAILY_ENERGY is True
                             and available_energy < settings.MIN_AVAILABLE_ENERGY
