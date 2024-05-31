@@ -270,8 +270,6 @@ class Tapper:
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
         turbo_time = 0
-        active_turbo = False
-
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
         async with aiohttp.ClientSession(headers=headers, connector=proxy_conn) as http_client:
@@ -325,27 +323,82 @@ class Tapper:
                                 logger.success(f"{self.session_name} | Successfully get daily reward | "
                                                f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
 
-                    taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
+                    if settings.AUTO_UPGRADE is True:
+                        resort = True
+                        while resort:
+                            upgrades = await self.get_upgrades(http_client=http_client)
 
-                    if active_turbo:
-                        taps += settings.ADD_TAPS_ON_TURBO
-                        if time() - turbo_time > 20:
-                            active_turbo = False
-                            turbo_time = 0
+                            available_upgrades = [
+                                data for data in upgrades
+                                if data['isAvailable'] is True
+                                   and data['isExpired'] is False
+                                   and data.get('cooldownSeconds', 0) == 0
+                                   and data.get('maxLevel', data['level']) >= data['level']
+                                   and (data.get('condition') is None
+                                        or data['condition'].get('_type') != 'SubscribeTelegramChannel')
+                            ]
 
-                    player_data = await self.send_taps(http_client=http_client,
-                                                       available_energy=available_energy,
-                                                       taps=taps)
+                            queue = []
 
-                    if not player_data:
-                        continue
+                            for upgrade in available_upgrades:
+                                upgrade_id = upgrade['id']
+                                level = upgrade['level']
+                                price = upgrade['price']
+                                profit = upgrade['profitPerHourDelta']
 
-                    available_energy = player_data.get('availableTaps', 0)
-                    new_balance = int(player_data.get('balanceCoins', 0))
-                    calc_taps = new_balance - balance
-                    balance = new_balance
-                    total = int(player_data.get('totalCoins', 0))
-                    earn_on_hour = player_data['earnPassivePerHour']
+                                significance = profit / price if price > 0 else 0
+
+                                queue.append([upgrade_id, significance, level, price, profit])
+
+                            queue.sort(key=operator.itemgetter(1), reverse=True)
+
+                            if len(queue) == 0:
+                                break
+
+                            count = 0
+                            for upgrade in queue:
+                                if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
+                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[0]}</e>")
+                                    await asyncio.sleep(delay=5)
+
+                                    status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
+
+                                    if status is True:
+                                        earn_on_hour += upgrade[4]
+                                        balance -= upgrade[3]
+                                        logger.success(
+                                            f"{self.session_name} | "
+                                            f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
+                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
+
+                                        await asyncio.sleep(delay=1)
+                                        break
+
+                                count += 1
+                                if count == 10 or count == len(queue):
+                                    resort = False
+                                    break
+
+                    while available_energy > settings.MIN_AVAILABLE_ENERGY:
+                        taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
+                        sleep_between_clicks = randint(a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
+
+                        player_data = await self.send_taps(http_client=http_client,
+                                                           available_energy=available_energy,
+                                                           taps=taps)
+
+                        logger.info(f"Sleep {sleep_between_clicks}s")
+                        await asyncio.sleep(delay=sleep_between_clicks)
+
+                        if not player_data:
+                            continue
+
+                        available_energy = player_data.get('availableTaps', 0)
+                        new_balance = int(player_data.get('balanceCoins', 0))
+                        calc_taps = new_balance - balance
+                        balance = new_balance
+                        total = int(player_data.get('totalCoins', 0))
+                        earn_on_hour = player_data['earnPassivePerHour']
 
                     boosts = await self.get_boosts(http_client=http_client)
                     energy_boost = next((boost for boost in boosts if boost['id'] == 'BoostFullAvailableTaps'), {})
@@ -353,85 +406,28 @@ class Tapper:
                     logger.success(f"{self.session_name} | Successful tapped! | "
                                    f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | Total: <e>{total}</e>")
 
-                    if active_turbo is False:
-                        if (settings.APPLY_DAILY_ENERGY is True
-                                and available_energy < settings.MIN_AVAILABLE_ENERGY
-                                and energy_boost.get("cooldownSeconds", 0) == 0
-                                and energy_boost.get("level", 0) <= energy_boost.get("maxLevel", 0)):
-                            logger.info(f"{self.session_name} | Sleep 5s before apply energy boost")
-                            await asyncio.sleep(delay=5)
+                    if (settings.APPLY_DAILY_ENERGY is True
+                            and available_energy < settings.MIN_AVAILABLE_ENERGY
+                            and energy_boost.get("cooldownSeconds", 0) == 0
+                            and energy_boost.get("level", 0) <= energy_boost.get("maxLevel", 0)):
+                        logger.info(f"{self.session_name} | Sleep 5s before apply energy boost")
+                        await asyncio.sleep(delay=5)
 
-                            status = await self.apply_boost(http_client=http_client, boost_id="BoostFullAvailableTaps")
-                            if status is True:
-                                logger.success(f"{self.session_name} | Successfully apply energy boost")
+                        status = await self.apply_boost(http_client=http_client, boost_id="BoostFullAvailableTaps")
+                        if status is True:
+                            logger.success(f"{self.session_name} | Successfully apply energy boost")
 
-                                await asyncio.sleep(delay=1)
-
-                                continue
-
-                        if settings.AUTO_UPGRADE is True:
-                            resort = True
-                            while resort:
-                                upgrades = await self.get_upgrades(http_client=http_client)
-
-                                available_upgrades = [
-                                    data for data in upgrades
-                                    if data['isAvailable'] is True
-                                    and data['isExpired'] is False
-                                    and data.get('cooldownSeconds', 0) == 0
-                                    and data.get('maxLevel', data['level']) >= data['level']
-                                    and (data.get('condition') is None
-                                         or data['condition'].get('_type') != 'SubscribeTelegramChannel')
-                                ]
-
-                                queue = []
-
-                                for upgrade in available_upgrades:
-                                    upgrade_id = upgrade['id']
-                                    level = upgrade['level']
-                                    price = upgrade['price']
-                                    profit = upgrade['profitPerHourDelta']
-
-                                    significance = profit / price if price > 0 else 0
-
-                                    queue.append([upgrade_id, significance, level, price, profit])
-
-                                queue.sort(key=operator.itemgetter(1), reverse=True)
-
-                                if len(queue) == 0:
-                                    break
-
-                                count = 0
-                                for upgrade in queue:
-                                    if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
-                                        logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[0]}</e>")
-                                        await asyncio.sleep(delay=5)
-
-                                        status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
-
-                                        if status is True:
-                                            earn_on_hour += upgrade[4]
-                                            balance -= upgrade[3]
-                                            logger.success(
-                                                f"{self.session_name} | "
-                                                f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                                f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
-
-                                            await asyncio.sleep(delay=1)
-                                            break
-
-                                    count += 1
-                                    if count == 10 or count == len(queue):
-                                        resort = False
-                                        break
-
-                        if available_energy < settings.MIN_AVAILABLE_ENERGY:
-                            logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
-                            logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
-
-                            await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
+                            await asyncio.sleep(delay=1)
 
                             continue
+
+                    if available_energy < settings.MIN_AVAILABLE_ENERGY:
+                        logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
+                        logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
+
+                        await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
+
+                        continue
 
                 except InvalidSession as error:
                     raise error
@@ -442,9 +438,6 @@ class Tapper:
 
                 else:
                     sleep_between_clicks = randint(a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
-
-                    if active_turbo is True:
-                        sleep_between_clicks = 4
 
                     logger.info(f"Sleep {sleep_between_clicks}s")
                     await asyncio.sleep(delay=sleep_between_clicks)
