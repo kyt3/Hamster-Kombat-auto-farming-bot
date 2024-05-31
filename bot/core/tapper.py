@@ -323,7 +323,7 @@ class Tapper:
                             logger.success(f"{self.session_name} | Successfully get daily reward | "
                                            f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
 
-                    if settings.AUTO_UPGRADE is True:
+                    if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True
                         while resort:
                             upgrades = await self.get_upgrades(http_client=http_client)
