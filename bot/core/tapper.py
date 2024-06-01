@@ -372,10 +372,12 @@ class Tapper:
                                             f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
 
                                         await asyncio.sleep(delay=1)
+                                        if balance < settings.MIN_BALANCE_FOR_UPGRADE:
+                                            resort = False
                                         break
 
                                 count += 1
-                                if count == 10 or count == len(queue):
+                                if count == 10 or count == len(queue) or balance < settings.MIN_BALANCE_FOR_UPGRADE:
                                     resort = False
                                     break
 
