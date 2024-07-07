@@ -344,11 +344,13 @@ class Tapper:
                                 upgrade_id = upgrade['id']
                                 level = upgrade['level']
                                 price = upgrade['price']
+                                current_profit = upgrade['currentProfitPerHour']
                                 profit = upgrade['profitPerHourDelta']
 
-                                significance = profit / price if price > 0 else 0
+                                significance = (profit + current_profit) / price if price > 0 else 0
 
-                                queue.append([upgrade_id, significance, level, price, profit])
+                                if significance > settings.MIN_SIGNIFICANCE:
+                                    queue.append([upgrade_id, significance, level, price, profit, current_profit])
 
                             queue.sort(key=operator.itemgetter(1), reverse=True)
 
@@ -369,7 +371,8 @@ class Tapper:
                                         logger.success(
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}</g>)")
+                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[5]}</g>) | "
+                                            f"Price <y>{upgrade[3]}</y>")
 
                                         await asyncio.sleep(delay=1)
                                         if balance < settings.MIN_BALANCE_FOR_UPGRADE:

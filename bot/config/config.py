@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     AUTO_UPGRADE: bool = True
     MIN_BALANCE_FOR_UPGRADE: int = 10000
     MAX_LEVEL: int = 20
+    MIN_SIGNIFICANCE: float = 0.1
 
     APPLY_DAILY_ENERGY: bool = True
     APPLY_DAILY_TURBO: bool = True
