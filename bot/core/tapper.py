@@ -373,7 +373,7 @@ class Tapper:
                                         logger.success(
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[5]}</g>) | "
+                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[4]+upgrade[5]}</g>) | "
                                             f"Price <y>{upgrade[3]}</y>")
 
                                         await asyncio.sleep(delay=1)
