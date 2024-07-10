@@ -334,8 +334,8 @@ class Tapper:
                                    and data['isExpired'] is False
                                    and data.get('cooldownSeconds', 0) == 0
                                    and data.get('maxLevel', data['level']) >= data['level']
-                                   and (data.get('condition') is None
-                                        or data['condition'].get('_type') != 'SubscribeTelegramChannel')
+                                   # and (data.get('condition') is None)
+                                        # or data['condition'].get('_type') != 'SubscribeTelegramChannel')
                             ]
 
                             queue = []
@@ -348,6 +348,8 @@ class Tapper:
                                 profit = upgrade['profitPerHourDelta']
 
                                 significance = (profit + current_profit) / price if price > 0 else 0
+
+                                # logger.info(f"{self.session_name} | Significance for <e>{upgrade_id}</e> is <y>{significance}</y>")
 
                                 if significance > settings.MIN_SIGNIFICANCE:
                                     queue.append([upgrade_id, significance, level, price, profit, current_profit])
