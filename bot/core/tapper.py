@@ -93,7 +93,7 @@ class Tapper:
     async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str) -> str:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/auth/auth-by-telegram-webapp',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/auth/auth-by-telegram-webapp',
                                               json={"initDataRaw": tg_web_data, "fingerprint": FINGERPRINT})
             response_text = await response.text()
             response.raise_for_status()
@@ -110,7 +110,7 @@ class Tapper:
     async def get_profile_data(self, http_client: aiohttp.ClientSession) -> dict[str]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/sync',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/sync',
                                               json={})
             response_text = await response.text()
             if response.status != 422:
@@ -128,7 +128,7 @@ class Tapper:
     async def get_tasks(self, http_client: aiohttp.ClientSession) -> dict[str]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/list-tasks',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/list-tasks',
                                               json={})
             response_text = await response.text()
             response.raise_for_status()
@@ -145,7 +145,7 @@ class Tapper:
     async def select_exchange(self, http_client: aiohttp.ClientSession, exchange_id: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/select-exchange',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/select-exchange',
                                               json={'exchangeId': exchange_id})
             response_text = await response.text()
             response.raise_for_status()
@@ -161,7 +161,7 @@ class Tapper:
     async def get_daily(self, http_client: aiohttp.ClientSession):
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/check-task',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/check-task',
                                               json={'taskId': "streak_days"})
             response_text = await response.text()
             response.raise_for_status()
@@ -177,7 +177,7 @@ class Tapper:
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_id: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/buy-boost',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/buy-boost',
                                               json={'timestamp': time(), 'boostId': boost_id})
             response_text = await response.text()
             response.raise_for_status()
@@ -193,7 +193,7 @@ class Tapper:
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> list[dict]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/upgrades-for-buy',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/upgrades-for-buy',
                                               json={})
             response_text = await response.text()
             response.raise_for_status()
@@ -210,7 +210,7 @@ class Tapper:
     async def buy_upgrade(self, http_client: aiohttp.ClientSession, upgrade_id: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/buy-upgrade',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/buy-upgrade',
                                               json={'timestamp': time(), 'upgradeId': upgrade_id})
             response_text = await response.text()
             if response.status != 422:
@@ -227,7 +227,7 @@ class Tapper:
     async def get_boosts(self, http_client: aiohttp.ClientSession) -> list[dict]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/boosts-for-buy', json={})
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/boosts-for-buy', json={})
             response_text = await response.text()
             response.raise_for_status()
 
@@ -243,7 +243,7 @@ class Tapper:
     async def send_taps(self, http_client: aiohttp.ClientSession, available_energy: int, taps: int) -> dict[str]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.hamsterkombat.io/clicker/tap',
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/tap',
                                               json={'availableTaps': available_energy, 'count': taps,
                                                     'timestamp': time()})
             response_text = await response.text()
