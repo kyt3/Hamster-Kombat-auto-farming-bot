@@ -70,7 +70,7 @@ class Tapper:
                 bot=peer,
                 platform='android',
                 from_bot_menu=False,
-                url='https://hamsterkombat.io/'
+                url='https://hamsterkombatgame.io/'
             ))
 
             auth_url = web_view.url
