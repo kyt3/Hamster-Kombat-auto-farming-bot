@@ -4,6 +4,7 @@ import operator
 from time import time
 from random import randint
 from urllib.parse import unquote
+from datetime import datetime
 
 import aiohttp
 from aiohttp_proxy import ProxyConnector
@@ -349,10 +350,18 @@ class Tapper:
 
                                 significance = (profit + current_profit) / price if price > 0 else 0
 
-                                # logger.info(f"{self.session_name} | Significance for <e>{upgrade_id}</e> is <y>{significance}</y>")
+                                # logger.info(f"{self.session_name} | <y>{upgrade}</y>")
 
-                                if significance > settings.MIN_SIGNIFICANCE:
-                                    queue.append([upgrade_id, significance, level, price, profit, current_profit])
+                                if upgrade.get('expiresAt') is None:
+                                    if significance > settings.MIN_SIGNIFICANCE:
+                                        queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
+                                else:
+                                    date_expires = datetime.strptime(upgrade['expiresAt'],"%Y-%m-%dT%H:%M:%S.%fZ")
+                                    date_now = datetime.now()
+                                    timedelta = date_expires - date_now
+                                    # logger.info(f"{self.session_name} | <y>{upgrade['name']}</y> expires in <y>{timedelta.total_seconds()}</y>")
+                                    if timedelta.total_seconds()/3600 > 2*(100/(significance*100)):
+                                        queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
 
                             queue.sort(key=operator.itemgetter(1), reverse=True)
 
@@ -362,7 +371,7 @@ class Tapper:
                             count = 0
                             for upgrade in queue:
                                 if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
-                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[0]}</e>")
+                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
                                     await asyncio.sleep(delay=5)
 
                                     status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
@@ -372,7 +381,7 @@ class Tapper:
                                         balance -= upgrade[3]
                                         logger.success(
                                             f"{self.session_name} | "
-                                            f"Successfully upgraded <e>{upgrade[0]}</e> to <m>{upgrade[2]}</m> lvl | "
+                                            f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
                                             f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[4]+upgrade[5]}</g>) | "
                                             f"Price <y>{upgrade[3]}</y>")
 
