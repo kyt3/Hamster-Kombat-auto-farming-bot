@@ -6,7 +6,7 @@ import random
 from time import time
 from random import randint
 from urllib.parse import unquote
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 from aiohttp_proxy import ProxyConnector
@@ -285,7 +285,7 @@ class Tapper:
     async def claim_daily_combo(self, http_client: aiohttp.ClientSession) -> bool:
         response_text = ''
         try:
-            response = await http_client.get(url='https://api.hamsterkombatgame.io/clicker/claim-daily-combo')
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/claim-daily-combo')
             response_text = await response.text()
             response.raise_for_status()
 
@@ -296,7 +296,7 @@ class Tapper:
             await asyncio.sleep(delay=3)
             return False
 
-    async def get_upgrades(self, http_client: aiohttp.ClientSession) -> list[dict]:
+    async def get_upgrades(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/upgrades-for-buy',
@@ -305,9 +305,8 @@ class Tapper:
             response.raise_for_status()
 
             response_json = await response.json()
-            upgrades = response_json['upgradesForBuy']
 
-            return upgrades
+            return response_json
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while getting Upgrades: {error} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
@@ -469,8 +468,9 @@ class Tapper:
                             logger.error(f"{self.session_name} | Not found mini game keys in config... ")
 
                     if settings.AUTO_BUY_COMBO is True:
-                        upgrades = await self.get_upgrades(http_client=http_client)
-                        if not upgrades['dailyCombo']['isClaimed']:
+                        upgrades_data = await self.get_upgrades(http_client=http_client)
+                        upgrades = upgrades_data['upgradesForBuy']
+                        if not upgrades_data['dailyCombo']['isClaimed']:
                             combo_cards = await self.get_combo_cards()
 
                             cards = combo_cards['combo']
@@ -480,7 +480,7 @@ class Tapper:
                                 data for data in upgrades
                                 if data['isAvailable'] is True
                                    and data['id'] in cards
-                                   and data['id'] not in upgrades['dailyCombo']['upgradeIds']
+                                   and data['id'] not in upgrades_data['dailyCombo']['upgradeIds']
                                    and data['isExpired'] is False
                                    and data.get('cooldownSeconds', 0) == 0
                                    and data.get('maxLevel', data['level']) >= data['level']
@@ -491,7 +491,7 @@ class Tapper:
 
                             if start_bonus_round <= datetime.now() < end_bonus_round:
                                 common_price = sum([upgrade['price'] for upgrade in available_combo_cards])
-                                need_cards_count = len(cards)
+                                need_cards_count = len(cards) - len(upgrades_data['dailyCombo']['upgradeIds'])
                                 possible_cards_count = len(available_combo_cards)
                                 is_combo_accessible = need_cards_count == possible_cards_count
 
@@ -503,7 +503,7 @@ class Tapper:
                                     logger.info(f"{self.session_name} | "
                                                 f"<lr>Daily combo is not applicable</lr>, you don't have enough coins. Need <ly>{common_price:,}</ly> coins, but your balance is <lr>{balance:,}</lr> coins")
 
-                                if common_price < 5000000 and balance > common_price and is_combo_accessible:
+                                if common_price < upgrades_data['dailyCombo']['bonusCoins'] and balance > common_price and is_combo_accessible:
                                     for upgrade in available_combo_cards:
                                         upgrade_id = upgrade['id']
                                         level = upgrade['level']
@@ -517,7 +517,7 @@ class Tapper:
 
                                         await asyncio.sleep(delay=5)
 
-                                        status, upgrades = await self.buy_upgrade(
+                                        status = await self.buy_upgrade(
                                             http_client=http_client,
                                             upgrade_id=upgrade_id,
                                         )
@@ -541,8 +541,8 @@ class Tapper:
                                     )
                                     if status is True:
                                         logger.success(
-                                            f'{self.session_name} | Successfully claimed daily combo | '
-                                            f'Bonus: <lg>+5000000</lg>'
+                                            f"{self.session_name} | Successfully claimed daily combo | "
+                                            f"Bonus: <lg>+{upgrades_data['dailyCombo']['bonusCoins']}</lg>"
                                         )
                                 else:
                                     logger.info(f"{self.session_name} | "
@@ -556,6 +556,7 @@ class Tapper:
                         resort = True
                         while resort:
                             upgrades = await self.get_upgrades(http_client=http_client)
+                            upgrades = upgrades["upgradesForBuy"]
 
                             available_upgrades = [
                                 data for data in upgrades
@@ -586,9 +587,9 @@ class Tapper:
                                 else:
                                     date_expires = datetime.strptime(upgrade['expiresAt'],"%Y-%m-%dT%H:%M:%S.%fZ")
                                     date_now = datetime.now()
-                                    timedelta = date_expires - date_now
-                                    # logger.info(f"{self.session_name} | <y>{upgrade['name']}</y> expires in <y>{timedelta.total_seconds()}</y>")
-                                    if timedelta.total_seconds()/3600 > 2*(100/(significance*100)):
+                                    timediff = date_expires - date_now
+                                    # logger.info(f"{self.session_name} | <y>{upgrade['name']}</y> expires in <y>{timediff.total_seconds()}</y>")
+                                    if timediff.total_seconds()/3600 > 2*(100/(significance*100)):
                                         queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
 
                             queue.sort(key=operator.itemgetter(1), reverse=True)
