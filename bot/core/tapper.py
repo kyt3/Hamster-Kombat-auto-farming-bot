@@ -383,7 +383,8 @@ class Tapper:
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
                                             f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[4]+upgrade[5]}</g>) | "
-                                            f"Price <y>{upgrade[3]}</y>")
+                                            f"Price <y>{upgrade[3]}</y> | "
+                                            f"Balance <e>{balance}</e>")
 
                                         await asyncio.sleep(delay=1)
                                         if balance < settings.MIN_BALANCE_FOR_UPGRADE:
