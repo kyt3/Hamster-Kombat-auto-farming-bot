@@ -248,14 +248,6 @@ class Tapper:
             )
             await asyncio.sleep(delay=wait_time)
 
-            url = "https://api.hamsterkombatgame.io/clicker/claim-daily-keys-minigame"
-
-            headers = {
-                "Accept": "application/json",
-                "Authorization": self.Authorization,
-                "Content-Type": "application/json",
-            }
-
             cipher = (
                     ("0" + str(random.randint(10000000000, 99999999999)))[:10]
                     + "|"
