@@ -410,8 +410,8 @@ class Tapper:
                     last_passive_earn = profile_data['lastPassiveEarn']
                     earn_on_hour = profile_data['earnPassivePerHour']
 
-                    logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn}</g> | "
-                                f"Earn every hour: <y>{earn_on_hour}</y>")
+                    logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn:,}</g> | "
+                                f"Earn every hour: <y>{earn_on_hour:,}</y>")
 
                     available_energy = profile_data.get('availableTaps', 0)
                     balance = int(profile_data.get('balanceCoins', 0))
@@ -499,9 +499,9 @@ class Tapper:
                                     logger.info(f"{self.session_name} | "
                                                 f"<lr>Daily combo is not applicable</lr>, you can only purchase {possible_cards_count} of {need_cards_count} cards")
 
-                                if balance < common_price:
-                                    logger.info(f"{self.session_name} | "
-                                                f"<lr>Daily combo is not applicable</lr>, you don't have enough coins. Need <ly>{common_price:,}</ly> coins, but your balance is <lr>{balance:,}</lr> coins")
+
+                                logger.info(f"{self.session_name} | "
+                                            f"<lr>Daily combo common price is </lr><ly>{common_price:,}</ly> coins")
 
                                 if common_price < upgrades_data['dailyCombo']['bonusCoins'] and balance > common_price and is_combo_accessible:
                                     for upgrade in available_combo_cards:
@@ -611,9 +611,9 @@ class Tapper:
                                         logger.success(
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour}</y> (<g>+{upgrade[4]}--->{upgrade[4]+upgrade[5]}</g>) | "
-                                            f"Price <y>{upgrade[3]}</y> | "
-                                            f"Balance <e>{balance}</e>")
+                                            f"Earn every hour: <y>{earn_on_hour:,}</y> (<g>+{upgrade[4]:,}--->{upgrade[4]+upgrade[5]:,}</g>) | "
+                                            f"Price <y>{upgrade[3]:,}</y> | "
+                                            f"Balance <e>{balance:,}</e>")
 
                                         await asyncio.sleep(delay=1)
                                         if balance < settings.MIN_BALANCE_FOR_UPGRADE:
@@ -650,8 +650,8 @@ class Tapper:
                             earn_on_hour = player_data['earnPassivePerHour']
 
                             logger.success(f"{self.session_name} | Successful tapped! | "
-                                           f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | "
-                                           f"Earn every hour: <y>{earn_on_hour}</y> | Total: <e>{total}</e>")
+                                           f"Balance: <c>{balance:,}</c> (<g>+{calc_taps}</g>) | "
+                                           f"Earn every hour: <y>{earn_on_hour:,}</y> | Total: <e>{total:,}</e>")
 
 
                     boosts = await self.get_boosts(http_client=http_client)
