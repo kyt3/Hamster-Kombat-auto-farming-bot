@@ -25,5 +25,6 @@ class Settings(BaseSettings):
 
     USE_PROXY_FROM_FILE: bool = False
 
+    AUTO_CLAIM_DAILY_CIPHER: bool = False
 
 settings = Settings()

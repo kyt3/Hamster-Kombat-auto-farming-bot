@@ -1,6 +1,7 @@
 import json
 import asyncio
 import operator
+import base64
 from time import time
 from random import randint
 from urllib.parse import unquote
@@ -191,6 +192,37 @@ class Tapper:
 
             return False
 
+    async def claim_daily_cipher(self, http_client: aiohttp.ClientSession, cipher: str) -> bool:
+        response_text = ''
+        try:
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/claim-daily-cipher',
+                                              json={'cipher': cipher})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while claim daily cipher '{cipher}': {error} | "
+                         f"Response text: {escape_html(response_text)[:128]}...")
+            await asyncio.sleep(delay=3)
+
+            return False
+
+    async def get_account_config(self, http_client: aiohttp.ClientSession) -> list[dict]:
+        response_text = ''
+        try:
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/config')
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            return response_json
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while get account config: {error} | "
+                         f"Response text: {escape_html(response_text)[:128]}...")
+            await asyncio.sleep(delay=3)
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> list[dict]:
         response_text = ''
         try:
@@ -292,6 +324,7 @@ class Tapper:
                     access_token_created_time = time()
 
                     profile_data = await self.get_profile_data(http_client=http_client)
+                    config_data = await self.get_account_config(http_client=http_client)
 
                     if not profile_data:
                         continue
@@ -323,6 +356,31 @@ class Tapper:
                         if status is True:
                             logger.success(f"{self.session_name} | Successfully get daily reward | "
                                            f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
+
+                    if settings.AUTO_CLAIM_DAILY_CIPHER is True:
+                        if "dailyCipher" in config_data:
+                            if not config_data["dailyCipher"]["isClaimed"]:
+                                logger.info(f"{self.session_name} | Try claim daily cipher... ")
+                                cipher = config_data["dailyCipher"]["cipher"]
+                                cipher = cipher[:3] + cipher[4:]
+                                cipher = cipher.encode("ascii")
+                                cipher = base64.b64decode(cipher)
+                                cipher = cipher.decode("ascii")
+
+                                logger.info(f"{self.session_name} | Decoded cipher <y>{cipher}</y>, sending... ")
+
+                                success = await self.claim_daily_cipher(http_client=http_client, cipher=cipher)
+
+                                if success is True:
+                                    logger.success(f"{self.session_name} | Successfully claimed cipher <y>{cipher}</y>")
+                                else:
+                                    logger.error(f"{self.session_name} | Not successful")
+                            else:
+                                logger.info(f"{self.session_name} | Daily cipher already claimed")
+
+                        else:
+                            logger.error(f"{self.session_name} | Not found daily cipher in config... ")
+
 
                     if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True
