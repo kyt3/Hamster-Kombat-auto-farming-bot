@@ -546,7 +546,7 @@ class Tapper:
                                         )
                                 else:
                                     logger.info(f"{self.session_name} | "
-                                                f"Decided not to buy combo")
+                                                f"Decided not buy combo")
 
 
                         else:
