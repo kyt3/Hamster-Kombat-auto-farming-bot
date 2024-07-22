@@ -626,36 +626,39 @@ class Tapper:
                                     break
 
                     earn_for_tap = profile_data['level'] + profile_data['boosts']['BoostEarnPerTap']['level']
-                    taps = int(available_energy / earn_for_tap)
-                    sleep_between_clicks = taps / 10
+                    while available_energy > earn_for_tap:
 
-                    logger.info(f"{self.session_name} | Sleep before sending taps {sleep_between_clicks}s")
-                    await asyncio.sleep(delay=sleep_between_clicks)
+                        taps = int(available_energy / earn_for_tap)
+                        sleep_between_clicks = taps / 10
 
-                    if taps > 0:
-                        player_data = await self.send_taps(http_client=http_client,
-                                                           available_energy=available_energy,
-                                                           taps=taps)
+                        logger.info(f"{self.session_name} | Sleep before sending taps {sleep_between_clicks}s")
+                        await asyncio.sleep(delay=sleep_between_clicks)
 
-                        if not player_data:
-                            continue
+                        if taps > 0:
+                            player_data = await self.send_taps(http_client=http_client,
+                                                               available_energy=available_energy,
+                                                               taps=taps)
 
-                        available_energy = player_data.get('availableTaps', 0)
-                        new_balance = int(player_data.get('balanceCoins', 0))
-                        calc_taps = new_balance - balance
-                        balance = new_balance
-                        total = int(player_data.get('totalCoins', 0))
-                        earn_on_hour = player_data['earnPassivePerHour']
+                            if not player_data:
+                                continue
 
-                        logger.success(f"{self.session_name} | Successful tapped! | "
-                                       f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | "
-                                       f"Earn every hour: <y>{earn_on_hour}</y> | Total: <e>{total}</e>")
+                            available_energy = player_data.get('availableTaps', 0)
+                            new_balance = int(player_data.get('balanceCoins', 0))
+                            calc_taps = new_balance - balance
+                            balance = new_balance
+                            total = int(player_data.get('totalCoins', 0))
+                            earn_on_hour = player_data['earnPassivePerHour']
+
+                            logger.success(f"{self.session_name} | Successful tapped! | "
+                                           f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | "
+                                           f"Earn every hour: <y>{earn_on_hour}</y> | Total: <e>{total}</e>")
 
 
                     boosts = await self.get_boosts(http_client=http_client)
                     energy_boost = next((boost for boost in boosts if boost['id'] == 'BoostFullAvailableTaps'), {})
 
                     if (settings.APPLY_DAILY_ENERGY is True
+                            and available_energy < earn_for_tap
                             and energy_boost.get("cooldownSeconds", 0) == 0
                             and energy_boost.get("level", 0) <= energy_boost.get("maxLevel", 0)):
                         logger.info(f"{self.session_name} | Sleep 5s before apply energy boost")
@@ -668,11 +671,12 @@ class Tapper:
                             await asyncio.sleep(delay=1)
 
                             continue
+                    if available_energy < earn_for_tap:
+                        logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
+                        logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
 
-                    logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
-                    logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
-
-                    await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
+                        await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
+                        continue
 
                 except InvalidSession as error:
                     raise error
