@@ -209,7 +209,7 @@ class Tapper:
 
             return False
 
-    async def get_account_config(self, http_client: aiohttp.ClientSession) -> list[dict]:
+    async def get_account_config(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/config')
@@ -224,7 +224,7 @@ class Tapper:
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
-    async def finish_mini_game(self, http_client: aiohttp.ClientSession, config_data: list[dict]):
+    async def finish_mini_game(self, http_client: aiohttp.ClientSession, profile_data: dict):
         try:
             logger.info(f"[{self.session_name}] | Start claiming mini game... ")
 
@@ -251,7 +251,7 @@ class Tapper:
             cipher = (
                     ("0" + str(random.randint(10000000000, 99999999999)))[:10]
                     + "|"
-                    + str(config_data["clickerUser"]["id"])
+                    + str(profile_data["id"])
             )
             cipher_base64 = base64.b64encode(cipher.encode()).decode()
 
@@ -260,13 +260,13 @@ class Tapper:
             response_text = await response.text()
             response.raise_for_status()
 
-            logger.info(f"[{self.account_name}] Mini game claimed successfully.")
+            logger.success(f"{self.session_name} | Mini game claimed successfully.")
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while finishing mini game: {error} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
-    async def get_combo_cards(self) -> list[dict]:
+    async def get_combo_cards(self) -> dict:
         async with aiohttp.ClientSession() as http_client:
             response_text = ''
             try:
@@ -401,6 +401,9 @@ class Tapper:
                     if not profile_data:
                         continue
 
+                    if not config_data:
+                        continue
+
                     exchange_id = profile_data.get('exchangeId')
                     if not exchange_id:
                         status = await self.select_exchange(http_client=http_client, exchange_id="bybit")
@@ -460,7 +463,7 @@ class Tapper:
                                 if config_data["dailyKeysMiniGame"]["remainSecondsToNextAttempt"] > 0:
                                     logger.info(f"{self.session_name} | Mini game on cooldown...")
                                 else:
-                                    await self.finish_mini_game(http_client=http_client, config_data=config_data)
+                                    await self.finish_mini_game(http_client=http_client, profile_data=profile_data)
                             else:
                                 logger.info(f"{self.session_name} | Mini game already claimed")
 
