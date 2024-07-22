@@ -26,5 +26,6 @@ class Settings(BaseSettings):
     USE_PROXY_FROM_FILE: bool = False
 
     AUTO_CLAIM_DAILY_CIPHER: bool = False
+    AUTO_FINISH_MINI_GAME: bool = False
 
 settings = Settings()

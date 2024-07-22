@@ -2,6 +2,7 @@ import json
 import asyncio
 import operator
 import base64
+import random
 from time import time
 from random import randint
 from urllib.parse import unquote
@@ -223,6 +224,56 @@ class Tapper:
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
+    async def finish_mini_game(self, http_client: aiohttp.ClientSession, config_data: list[dict]):
+        try:
+            logger.info(f"[{self.session_name}] | Start claiming mini game... ")
+
+            ## check timer.
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/start-keys-minigame')
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            seconds_to_guess = response_json["dailyKeysMiniGame"]["remainSecondsToGuess"]
+
+            wait_time = random.randint(int(seconds_to_guess/2), int(seconds_to_guess - 5))
+
+            if wait_time < 0:
+                logger.error(f"[{self.session_name}] | Unable to claim mini game. Wait time less than 0")
+                return
+
+            logger.info(
+                f"[{self.session_name}] | Mini-game will be completed in {wait_time} seconds..."
+            )
+            await asyncio.sleep(delay=wait_time)
+
+            url = "https://api.hamsterkombatgame.io/clicker/claim-daily-keys-minigame"
+
+            headers = {
+                "Accept": "application/json",
+                "Authorization": self.Authorization,
+                "Content-Type": "application/json",
+            }
+
+            cipher = (
+                    ("0" + str(random.randint(10000000000, 99999999999)))[:10]
+                    + "|"
+                    + str(config_data["clickerUser"]["id"])
+            )
+            cipher_base64 = base64.b64encode(cipher.encode()).decode()
+
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/claim-daily-keys-minigame',
+                                              json={"cipher": cipher_base64})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            logger.info(f"[{self.account_name}] Mini game claimed successfully.")
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while get account config: {error} | "
+                         f"Response text: {escape_html(response_text)[:128]}...")
+            await asyncio.sleep(delay=3)
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> list[dict]:
         response_text = ''
         try:
@@ -381,6 +432,19 @@ class Tapper:
                         else:
                             logger.error(f"{self.session_name} | Not found daily cipher in config... ")
 
+                    if settings.AUTO_FINISH_MINI_GAME is True:
+                        if "dailyKeysMiniGame" in config_data:
+                            if not config_data["dailyKeysMiniGame"]["isClaimed"]:
+
+                                if config_data["dailyKeysMiniGame"]["remainSecondsToNextAttempt"] > 0:
+                                    logger.info(f"{self.session_name} | Mini game on cooldown...")
+                                else:
+                                    await self.finish_mini_game(http_client=http_client, config_data=config_data)
+                            else:
+                                logger.info(f"{self.session_name} | Mini game already claimed")
+
+                        else:
+                            logger.error(f"{self.session_name} | Not found mini game keys in config... ")
 
                     if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True
