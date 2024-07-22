@@ -262,7 +262,7 @@ class Tapper:
 
             logger.info(f"[{self.account_name}] Mini game claimed successfully.")
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while get account config: {error} | "
+            logger.error(f"{self.session_name} | Unknown error while finishing mini game: {error} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
