@@ -266,6 +266,36 @@ class Tapper:
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
+    async def get_combo_cards(self) -> list[dict]:
+        async with aiohttp.ClientSession() as http_client:
+            response_text = ''
+            try:
+                response = await http_client.get(url='https://api21.datavibe.top/api/GetCombo')
+                response_text = await response.text()
+                response.raise_for_status()
+
+                response_json = await response.json()
+
+                return response_json
+            except Exception as error:
+                logger.error(f"{self.session_name} | Unknown error while get combo cards: {error} | "
+                             f"Response text: {escape_html(response_text)[:128]}...")
+                await asyncio.sleep(delay=3)
+
+    async def claim_daily_combo(self, http_client: aiohttp.ClientSession) -> bool:
+        response_text = ''
+        try:
+            response = await http_client.get(url='https://api.hamsterkombatgame.io/clicker/claim-daily-combo')
+            response_text = await response.text()
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while claim daily combo: {error} | "
+                         f"Response text: {escape_html(response_text)[:128]}...")
+            await asyncio.sleep(delay=3)
+            return False
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> list[dict]:
         response_text = ''
         try:
@@ -437,6 +467,90 @@ class Tapper:
 
                         else:
                             logger.error(f"{self.session_name} | Not found mini game keys in config... ")
+
+                    if settings.AUTO_BUY_COMBO is True:
+                        upgrades = await self.get_upgrades(http_client=http_client)
+                        if not upgrades['dailyCombo']['isClaimed']:
+                            combo_cards = await self.get_combo_cards()
+
+                            cards = combo_cards['combo']
+                            date = combo_cards['date']
+
+                            available_combo_cards = [
+                                data for data in upgrades
+                                if data['isAvailable'] is True
+                                   and data['id'] in cards
+                                   and data['id'] not in upgrades['dailyCombo']['upgradeIds']
+                                   and data['isExpired'] is False
+                                   and data.get('cooldownSeconds', 0) == 0
+                                   and data.get('maxLevel', data['level']) >= data['level']
+                            ]
+
+                            start_bonus_round = datetime.strptime(date, "%d-%m-%y").replace(hour=15)
+                            end_bonus_round = start_bonus_round + timedelta(days=1)
+
+                            if start_bonus_round <= datetime.now() < end_bonus_round:
+                                common_price = sum([upgrade['price'] for upgrade in available_combo_cards])
+                                need_cards_count = len(cards)
+                                possible_cards_count = len(available_combo_cards)
+                                is_combo_accessible = need_cards_count == possible_cards_count
+
+                                if not is_combo_accessible:
+                                    logger.info(f"{self.session_name} | "
+                                                f"<lr>Daily combo is not applicable</lr>, you can only purchase {possible_cards_count} of {need_cards_count} cards")
+
+                                if balance < common_price:
+                                    logger.info(f"{self.session_name} | "
+                                                f"<lr>Daily combo is not applicable</lr>, you don't have enough coins. Need <ly>{common_price:,}</ly> coins, but your balance is <lr>{balance:,}</lr> coins")
+
+                                if common_price < 5000000 and balance > common_price and is_combo_accessible:
+                                    for upgrade in available_combo_cards:
+                                        upgrade_id = upgrade['id']
+                                        level = upgrade['level']
+                                        price = upgrade['price']
+                                        profit = upgrade['profitPerHourDelta']
+
+                                        logger.info(
+                                            f'{self.session_name} | '
+                                            f'Sleep 5s before upgrade <lr>combo</lr> card <le>{upgrade_id}</le>'
+                                        )
+
+                                        await asyncio.sleep(delay=5)
+
+                                        status, upgrades = await self.buy_upgrade(
+                                            http_client=http_client,
+                                            upgrade_id=upgrade_id,
+                                        )
+
+                                        if status is True:
+                                            earn_on_hour += profit
+                                            balance -= price
+                                            logger.success(
+                                                f'{self.session_name} | '
+                                                f'Successfully upgraded <le>{upgrade_id}</le> with price <lr>{price:,}</lr> to <m>{level}</m> lvl | '
+                                                f'Earn every hour: <ly>{earn_on_hour:,}</ly> (<lg>+{profit:,}</lg>) | '
+                                                f'Money left: <le>{balance:,}</le>'
+                                            )
+
+                                            await asyncio.sleep(delay=1)
+
+                                    await asyncio.sleep(delay=2)
+
+                                    status = await self.claim_daily_combo(
+                                        http_client=http_client
+                                    )
+                                    if status is True:
+                                        logger.success(
+                                            f'{self.session_name} | Successfully claimed daily combo | '
+                                            f'Bonus: <lg>+5000000</lg>'
+                                        )
+                                else:
+                                    logger.info(f"{self.session_name} | "
+                                                f"Decided not to buy combo")
+
+
+                        else:
+                            logger.info(f"{self.session_name} | Combo already claimed")
 
                     if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True

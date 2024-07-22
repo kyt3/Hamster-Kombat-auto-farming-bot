@@ -29,6 +29,7 @@
 | **USE_PROXY_FROM_FILE**     | Использовать-ли прокси из файла `bot/config/proxies.txt` _(True / False)_              |
 | **AUTO_CLAIM_DAILY_CIPHER** | Авто прохождение шифра азбуки морзе.                                                   |
 | **AUTO_FINISH_MINI_GAME**   | Авто прохождение мини-игры.                                                            |
+| **AUTO_BUY_COMBO**          | Авто покупка комбо карточек.                                                           |
 
 Пример заполнения файла с настройками
 
