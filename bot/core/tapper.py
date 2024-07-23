@@ -226,7 +226,7 @@ class Tapper:
 
     async def finish_mini_game(self, http_client: aiohttp.ClientSession, profile_data: dict):
         try:
-            logger.info(f"[{self.session_name}] | Start claiming mini game... ")
+            logger.info(f"{self.session_name} | <y>Start claiming mini game...</y> ")
 
             ## check timer.
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/start-keys-minigame')
