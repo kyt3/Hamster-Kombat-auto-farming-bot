@@ -226,7 +226,7 @@ class Tapper:
 
     async def finish_mini_game(self, http_client: aiohttp.ClientSession, profile_data: dict):
         try:
-            logger.info(f"{self.session_name} | <y>Start claiming mini game...</y> ")
+            logger.info(f"{self.session_name} | <lr>Start claiming mini game...</lr> ")
 
             ## check timer.
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/start-keys-minigame')
@@ -435,14 +435,14 @@ class Tapper:
                     if settings.AUTO_CLAIM_DAILY_CIPHER is True:
                         if "dailyCipher" in config_data:
                             if not config_data["dailyCipher"]["isClaimed"]:
-                                logger.info(f"{self.session_name} | Try claim daily cipher... ")
+                                logger.info(f"{self.session_name} | <lr>Try claim daily cipher...</lr> ")
                                 cipher = config_data["dailyCipher"]["cipher"]
                                 cipher = cipher[:3] + cipher[4:]
                                 cipher = cipher.encode("ascii")
                                 cipher = base64.b64decode(cipher)
                                 cipher = cipher.decode("ascii")
 
-                                logger.info(f"{self.session_name} | Decoded cipher <y>{cipher}</y>, sending... ")
+                                logger.info(f"{self.session_name} | Decoded cipher <ly>{cipher}</ly>, sending... ")
 
                                 success = await self.claim_daily_cipher(http_client=http_client, cipher=cipher)
 
@@ -451,7 +451,7 @@ class Tapper:
                                 else:
                                     logger.error(f"{self.session_name} | Not successful")
                             else:
-                                logger.info(f"{self.session_name} | Daily cipher already claimed")
+                                logger.info(f"{self.session_name} | <ly>Daily cipher already claimed</ly>")
 
                         else:
                             logger.error(f"{self.session_name} | Not found daily cipher in config... ")
@@ -465,7 +465,7 @@ class Tapper:
                                 else:
                                     await self.finish_mini_game(http_client=http_client, profile_data=profile_data)
                             else:
-                                logger.info(f"{self.session_name} | Mini game already claimed")
+                                logger.info(f"{self.session_name} | <ly>Mini game already claimed</ly>")
 
                         else:
                             logger.error(f"{self.session_name} | Not found mini game keys in config... ")
@@ -549,11 +549,13 @@ class Tapper:
                                         )
                                 else:
                                     logger.info(f"{self.session_name} | "
-                                                f"Decided not buy combo")
-
+                                                f"<le>Decided not buy combo</le>")
+                            else:
+                                logger.info(f"{self.session_name} | "
+                                            f"<lr>Waiting for combo from api...</lr>")
 
                         else:
-                            logger.info(f"{self.session_name} | Combo already claimed")
+                            logger.info(f"{self.session_name} | <ly>Combo already claimed</ly>")
 
                     if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True
