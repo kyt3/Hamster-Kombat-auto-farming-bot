@@ -691,7 +691,7 @@ class Tapper:
                     await asyncio.sleep(delay=3)
 
                 else:
-                    sleep_between_clicks = randint(a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
+                    sleep_between_clicks = 3600
 
                     logger.info(f"Sleep {sleep_between_clicks}s")
                     await asyncio.sleep(delay=sleep_between_clicks)
