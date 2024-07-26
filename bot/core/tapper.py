@@ -489,7 +489,7 @@ class Tapper:
                                    and data.get('maxLevel', data['level']) >= data['level']
                             ]
 
-                            start_bonus_round = datetime.strptime(date, "%d-%m-%y").replace(hour=15)
+                            start_bonus_round = datetime.strptime(date, "%d-%m-%y").replace(hour=14)
                             end_bonus_round = start_bonus_round + timedelta(days=1)
 
                             if start_bonus_round <= datetime.now() < end_bonus_round:
