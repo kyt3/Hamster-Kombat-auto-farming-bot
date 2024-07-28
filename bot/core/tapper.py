@@ -671,7 +671,7 @@ class Tapper:
                         else:
                             logger.info(f"{self.session_name} | <ly>Bike game already claimed</ly>")
 
-                    if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
+                    if settings.AUTO_UPGRADE is True and balance > settings.BALANCE_TO_SAVE:
                         resort = True
                         while resort:
                             upgrades = await self.get_upgrades(http_client=http_client)
@@ -697,6 +697,9 @@ class Tapper:
                                 profit = upgrade['profitPerHourDelta']
 
                                 significance = (profit + current_profit) / price if price > 0 else 0
+
+                                if balance - price < settings.BALANCE_TO_SAVE:
+                                    continue
 
                                 # logger.info(f"{self.session_name} | <y>{upgrade}</y>")
 
@@ -735,12 +738,12 @@ class Tapper:
                                             f"Balance <e>{balance:,}</e>")
 
                                         await asyncio.sleep(delay=1)
-                                        if balance < settings.MIN_BALANCE_FOR_UPGRADE:
+                                        if balance < settings.BALANCE_TO_SAVE:
                                             resort = False
                                         break
 
                                 count += 1
-                                if count == 10 or count == len(queue) or balance < settings.MIN_BALANCE_FOR_UPGRADE:
+                                if count == 10 or count == len(queue) or balance < settings.BALANCE_TO_SAVE:
                                     resort = False
                                     break
 

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ADD_TAPS_ON_TURBO: int = 2500
 
     AUTO_UPGRADE: bool = True
-    MIN_BALANCE_FOR_UPGRADE: int = 10000
+    BALANCE_TO_SAVE: int = 10000
     MAX_LEVEL: int = 20
     MIN_SIGNIFICANCE: float = 0.1
 
