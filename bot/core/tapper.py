@@ -3,8 +3,8 @@ import asyncio
 import operator
 import base64
 import random
+import uuid
 from time import time
-from random import randint
 from urllib.parse import unquote
 from datetime import datetime, timedelta
 
@@ -296,6 +296,106 @@ class Tapper:
             await asyncio.sleep(delay=3)
             return False
 
+    async def game_promo_login(self, http_client: aiohttp.ClientSession) -> str:
+        response_text = ''
+        try:
+            logger.info(f"{self.session_name} | Login in promo API... ")
+
+            cliend_id = str(datetime.timestamp(datetime.now())) + "-" + (str(random.randint(1000000000000000000, 9999999999999999999))[: 19])
+
+            response = await http_client.post(url='https://api.gamepromo.io/promo/login-client',
+                                              json={"appToken": "d28721be-fd2d-4b45-869e-9f253b554e50",
+                                                    "clientId": f"{cliend_id}", "clientOrigin": "deviceid"})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            logger.success(f"{self.session_name} | Success login in promo API ")
+
+            return response_json["clientToken"]
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while promo login: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
+    async def game_promo_register_event(self, http_client: aiohttp.ClientSession) -> bool:
+        response_text = ''
+        try:
+            logger.info(f"{self.session_name} | Register promo event... ")
+
+            response = await http_client.post(url='https://api.gamepromo.io/promo/register-event',
+                                              json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f",
+                                                    "eventId": f"{uuid.uuid4()}", "eventOrigin": "undefined"})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            logger.success(f"{self.session_name} | Successful register promo event")
+
+            return response_json["hasCode"] == 'true'
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
+            return False
+
+    async def create_promo_code(self, http_client: aiohttp.ClientSession) -> str:
+        response_text = ''
+        try:
+            logger.info(f"{self.session_name} | Creating promo code... ")
+
+            response = await http_client.post(url='https://api.gamepromo.io/promo/create-code',
+                                              json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f"})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            logger.success(f"{self.session_name} | Successful created promo code")
+
+            return response_json["promoCode"]
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
+    async def apply_promo(self, http_client: aiohttp.ClientSession, promo_code: str):
+        response_text = ''
+        try:
+            logger.info(f"{self.session_name} | Apply promo code... ")
+
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/apply-promo',
+                                              json={"promoCode": f"{promo_code}"})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            logger.success(f"{self.session_name} | Successful applied promo code")
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
+    async def finish_bike_game(self):
+        async with aiohttp.ClientSession() as http_client:
+            http_client.headers["Content-Type"] = f"application/json; charset=utf-8"
+            http_client.headers["Host"] = f"api.gamepromo.io"
+
+            client_token = await self.game_promo_login(http_client)
+            http_client.headers["Authorization"] = f"Bearer {client_token}"
+
+            code_available = False
+
+            while not code_available:
+                await asyncio.sleep(delay=30)
+                logger.info(f"{self.session_name} | Sleep 30 seconds before register event ")
+                code_available = await self.game_promo_register_event(http_client)
+
+            promo_code = await self.create_promo_code(http_client)
+            return promo_code
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
         try:
@@ -556,6 +656,20 @@ class Tapper:
 
                         else:
                             logger.info(f"{self.session_name} | <ly>Combo already claimed</ly>")
+
+                    if settings.AUTO_FINISH_BIKE_GAME is True:
+                        max_keys_per_day = config_data["clickerConfig"]["promos"]["apps"][0]["promos"][0]["keysPerDay"]
+                        keys_remain = max_keys_per_day-profile_data["clickerUser"]["promos"][0]["receiveKeysToday"]
+
+                        if keys_remain > 0:
+                            while keys_remain > 0:
+                                promo_code = await self.finish_bike_game()
+                                await asyncio.sleep(delay=10)
+                                logger.info(f"{self.session_name} | Sleep 10 seconds before apply promo...")
+                                await self.apply_promo(http_client,promo_code)
+                                keys_remain -= 1
+                        else:
+                            logger.info(f"{self.session_name} | <ly>Bike game already claimed</ly>")
 
                     if settings.AUTO_UPGRADE is True and balance > settings.MIN_BALANCE_FOR_UPGRADE:
                         resort = True
