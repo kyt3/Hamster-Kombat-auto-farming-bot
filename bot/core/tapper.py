@@ -334,7 +334,7 @@ class Tapper:
 
             logger.success(f"{self.session_name} | Successful register promo event")
 
-            return response_json["hasCode"] == 'true'
+            return response_json["hasCode"] is True
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
                          f"Response text: {escape_html(response_text)}...")
@@ -389,8 +389,8 @@ class Tapper:
             code_available = False
 
             while not code_available:
-                await asyncio.sleep(delay=30)
-                logger.info(f"{self.session_name} | Sleep 30 seconds before register event ")
+                logger.info(f"{self.session_name} | Sleep 60 seconds before register event ")
+                await asyncio.sleep(delay=60)
                 code_available = await self.game_promo_register_event(http_client)
 
             promo_code = await self.create_promo_code(http_client)
@@ -658,8 +658,8 @@ class Tapper:
                             logger.info(f"{self.session_name} | <ly>Combo already claimed</ly>")
 
                     if settings.AUTO_FINISH_BIKE_GAME is True:
-                        max_keys_per_day = config_data["clickerConfig"]["promos"]["apps"][0]["promos"][0]["keysPerDay"]
-                        keys_remain = max_keys_per_day-profile_data["clickerUser"]["promos"][0]["receiveKeysToday"]
+                        max_keys_per_day = int(config_data["clickerConfig"]["promos"]["apps"][0]["promos"][0]["keysPerDay"])
+                        keys_remain = max_keys_per_day - profile_data["promos"][0]["receiveKeysToday"]
 
                         if keys_remain > 0:
                             while keys_remain > 0:
