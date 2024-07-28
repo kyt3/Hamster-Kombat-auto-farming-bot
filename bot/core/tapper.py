@@ -334,7 +334,7 @@ class Tapper:
 
             logger.success(f"{self.session_name} | Successful register promo event")
 
-            return response_json["hasCode"] is True
+            return response_json["hasCode"]
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
                          f"Response text: {escape_html(response_text)}...")
