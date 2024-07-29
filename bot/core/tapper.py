@@ -664,8 +664,8 @@ class Tapper:
                         if keys_remain > 0:
                             while keys_remain > 0:
                                 promo_code = await self.finish_bike_game()
-                                await asyncio.sleep(delay=10)
                                 logger.info(f"{self.session_name} | Sleep 10 seconds before apply promo...")
+                                await asyncio.sleep(delay=10)
                                 await self.apply_promo(http_client,promo_code)
                                 keys_remain -= 1
                         else:
