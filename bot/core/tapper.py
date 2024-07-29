@@ -676,8 +676,12 @@ class Tapper:
                     if settings.AUTO_FINISH_BIKE_GAME is True:
                         promos_data = await self.get_promos(http_client=http_client)
 
-                        max_keys_per_day = int(promos_data["promos"][0]["keysPerDay"])
-                        keys_remain = max_keys_per_day - promos_data["states"][0]["receiveKeysToday"]
+                        try:
+                            max_keys_per_day = int(promos_data["promos"][0]["keysPerDay"])
+                            keys_remain = max_keys_per_day - promos_data["states"][0]["receiveKeysToday"]
+                        except Exception as error:
+                            logger.error(f"{self.session_name} | <lr>Something wrong with get promo response. Response: {promos_data}</lr")
+                            keys_remain = 0
 
                         if keys_remain > 0:
                             while keys_remain > 0:
