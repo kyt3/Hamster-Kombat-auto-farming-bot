@@ -396,6 +396,22 @@ class Tapper:
             promo_code = await self.create_promo_code(http_client)
             return promo_code
 
+    async def get_promos(self, http_client: aiohttp.ClientSession) -> dict:
+        response_text = ''
+        try:
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/get-promos',
+                                              json={})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            return response_json
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while getting Upgrades: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
         try:
@@ -658,8 +674,10 @@ class Tapper:
                             logger.info(f"{self.session_name} | <ly>Combo already claimed</ly>")
 
                     if settings.AUTO_FINISH_BIKE_GAME is True:
-                        max_keys_per_day = int(config_data["clickerConfig"]["promos"]["apps"][0]["promos"][0]["keysPerDay"])
-                        keys_remain = max_keys_per_day - profile_data["promos"][0]["receiveKeysToday"]
+                        promos_data = await self.get_promos(http_client=http_client)
+
+                        max_keys_per_day = int(promos_data["promos"][0]["keysPerDay"])
+                        keys_remain = max_keys_per_day - promos_data["states"][0]["receiveKeysToday"]
 
                         if keys_remain > 0:
                             while keys_remain > 0:
