@@ -680,7 +680,7 @@ class Tapper:
                             max_keys_per_day = int(promos_data["promos"][0]["keysPerDay"])
                             keys_remain = max_keys_per_day - promos_data["states"][0]["receiveKeysToday"]
                         except Exception:
-                            logger.error(f"{self.session_name} | <lr>Something wrong with get promo response. Response: {promos_data}</lr")
+                            logger.error(f"{self.session_name} | <lr>Something wrong with get promo response. Response: {promos_data}</lr>")
                             keys_remain = 0
 
                         if keys_remain > 0:
