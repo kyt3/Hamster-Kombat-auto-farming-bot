@@ -240,11 +240,11 @@ class Tapper:
             wait_time = random.randint(int(seconds_to_guess/2), int(seconds_to_guess - 5))
 
             if wait_time < 0:
-                logger.error(f"[{self.session_name}] | Unable to claim mini game. Wait time less than 0")
+                logger.error(f"{self.session_name} | Unable to claim mini game. Wait time less than 0")
                 return
 
             logger.info(
-                f"[{self.session_name}] | Mini-game will be completed in {wait_time} seconds..."
+                f"{self.session_name} | Mini-game will be completed in {wait_time} seconds..."
             )
             await asyncio.sleep(delay=wait_time)
 
@@ -468,8 +468,7 @@ class Tapper:
                                               json={'availableTaps': available_energy, 'count': taps,
                                                     'timestamp': time()})
             response_text = await response.text()
-            if response.status != 422:
-                response.raise_for_status()
+            response.raise_for_status()
 
             response_json = json.loads(response_text)
             player_data = response_json.get('clickerUser') or response_json.get('found', {}).get('clickerUser', {})
