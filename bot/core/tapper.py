@@ -498,8 +498,13 @@ class Tapper:
 
             tg_web_data = await self.get_tg_web_data(proxy=proxy)
 
+            errors_in_a_row = 0
             while True:
                 try:
+                    if errors_in_a_row >= 10:
+                        logger.error(f"{self.session_name} | <lr>Error 10 times in a row. Exit.</lr>")
+                        break
+
                     if time() - access_token_created_time >= 3600:
                         access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
@@ -824,20 +829,16 @@ class Tapper:
                         logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
 
                         await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
-                        continue
+
+                    errors_in_a_row = 0
 
                 except InvalidSession as error:
                     raise error
 
                 except Exception as error:
                     logger.error(f"{self.session_name} | Unknown error: {error}")
+                    errors_in_a_row += 1
                     await asyncio.sleep(delay=3)
-
-                else:
-                    sleep_between_clicks = settings.SLEEP_BY_MIN_ENERGY
-
-                    logger.info(f"Sleep {sleep_between_clicks}s")
-                    await asyncio.sleep(delay=sleep_between_clicks)
 
 
 async def run_tapper(tg_client: Client, proxy: str | None):
