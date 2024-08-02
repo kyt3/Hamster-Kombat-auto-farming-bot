@@ -477,7 +477,7 @@ class Tapper:
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while Tapping: {error} | "
                          f"Response text: {escape_html(response_text)}...")
-            await asyncio.sleep(delay=3)
+            raise Exception
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
         try:
@@ -486,6 +486,7 @@ class Tapper:
             logger.info(f"{self.session_name} | Proxy IP: {ip}")
         except Exception as error:
             logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
+            raise Exception
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
