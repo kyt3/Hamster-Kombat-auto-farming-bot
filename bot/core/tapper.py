@@ -461,7 +461,7 @@ class Tapper:
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
-    async def send_taps(self, http_client: aiohttp.ClientSession, available_energy: int, taps: int, timestamp: float) -> dict[str]:
+    async def send_taps(self, http_client: aiohttp.ClientSession, available_energy: int, taps: int, timestamp: int) -> dict[str]:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/tap',
@@ -784,7 +784,7 @@ class Tapper:
                         await asyncio.sleep(delay=sleep_between_clicks)
 
                         if taps > 0:
-                            available_taps = available_energy - (taps * earn_for_tap)
+                            available_taps = int(available_energy - (taps * earn_for_tap))
                             timestamp = int(time())
 
                             player_data = await self.send_taps(http_client=http_client,
