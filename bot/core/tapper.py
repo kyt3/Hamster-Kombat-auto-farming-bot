@@ -785,7 +785,6 @@ class Tapper:
                         if taps > 0:
                             available_taps = available_energy - (taps * earn_for_tap) + 9
                             timestamp = int(time())
-                            logger.info(f"Available taps = {available_taps}")
 
                             player_data = await self.send_taps(http_client=http_client,
                                                                available_energy=available_taps,
