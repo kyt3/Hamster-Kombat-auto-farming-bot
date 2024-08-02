@@ -784,7 +784,7 @@ class Tapper:
                         await asyncio.sleep(delay=sleep_between_clicks)
 
                         if taps > 0:
-                            available_taps = int(available_energy - (taps * earn_for_tap))
+                            available_taps = int(available_energy - (taps * earn_for_tap) + 9)
                             timestamp = int(time())
 
                             player_data = await self.send_taps(http_client=http_client,
