@@ -716,9 +716,6 @@ class Tapper:
 
                             queue = []
 
-                            max_level = 0
-                            cards_on_max_level = 0
-                            max_significance = 0
                             for upgrade in available_upgrades:
                                 upgrade_id = upgrade['id']
                                 level = upgrade['level']
@@ -726,17 +723,7 @@ class Tapper:
                                 current_profit = upgrade['currentProfitPerHour']
                                 profit = upgrade['profitPerHourDelta']
 
-                                if max_level < level:
-                                    max_level = level
-                                    cards_on_max_level = 0
-
-                                if max_level == level:
-                                    cards_on_max_level += 1
-
                                 significance = (profit + current_profit) / price if price > 0 else 0
-
-                                if max_significance < significance:
-                                    max_significance = significance
 
                                 if balance - price < settings.BALANCE_TO_SAVE:
                                     continue
@@ -754,16 +741,29 @@ class Tapper:
                                     if timediff.total_seconds()/3600 > 2*(100/(significance*100)):
                                         queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
 
-                            logger.info(f"{self.session_name} | <lg>Max level of cards: {max_level} | "
-                                        f"Cards on max level: {cards_on_max_level} | "
-                                        f"Max significance: {max_significance} </lg>")
                             queue.sort(key=operator.itemgetter(1), reverse=True)
 
                             if len(queue) == 0:
                                 break
 
                             count = 0
+                            max_level = 0
+                            cards_on_max_level = 0
+                            max_significance = 0
                             for upgrade in queue:
+                                level = upgrade[2]
+                                significance = upgrade[1]
+
+                                if max_level < level:
+                                    max_level = level
+                                    cards_on_max_level = 0
+
+                                if max_level == level:
+                                    cards_on_max_level += 1
+
+                                if max_significance < significance:
+                                    max_significance = significance
+
                                 if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
                                     logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
                                     await asyncio.sleep(delay=5)
@@ -789,6 +789,10 @@ class Tapper:
                                 if count == 10 or count == len(queue) or balance < settings.BALANCE_TO_SAVE:
                                     resort = False
                                     break
+
+                            logger.info(f"{self.session_name} | <lg>Max level of cards: {max_level} | "
+                                        f"Cards on max level: {cards_on_max_level} | "
+                                        f"Max significance: {max_significance} </lg>")
 
                     earn_for_tap = profile_data['level'] + profile_data['boosts']['BoostEarnPerTap']['level']
                     while available_energy > earn_for_tap:
