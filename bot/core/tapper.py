@@ -412,6 +412,36 @@ class Tapper:
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
+    async def get_skin(self, http_client: aiohttp.ClientSession) -> dict:
+        response_text = ''
+        try:
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/get-skin',
+                                              json={})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            response_json = await response.json()
+
+            return response_json
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while getting skins: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            await asyncio.sleep(delay=3)
+
+    async def buy_skin(self, http_client: aiohttp.ClientSession, skin_id: str) -> bool:
+        response_text = ''
+        try:
+            response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/buy-skin',
+                                              json={"skinId": skin_id, "timestamp": int(time())})
+            response_text = await response.text()
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while buying skins: {error} | "
+                         f"Response text: {escape_html(response_text)}...")
+            return False
+
     async def get_upgrades(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
         try:
@@ -772,6 +802,24 @@ class Tapper:
                                         resort = True
                                         break
 
+                    if settings.BUY_ALL_SKINS:
+                        balance = int(profile_data.get('balanceCoins', 0))
+                        skins = config_data['clickerConfig']['skins']
+
+                        bought_skins = []
+                        for skin in profile_data['skin']['available']:
+                            bought_skins.append(skin['skinId'])
+
+                        for skin in skins:
+                            if skin['id'] not in bought_skins and balance > skin['price'] \
+                                    and balance - skin['price'] > settings.BALANCE_TO_SAVE:
+                                logger.info(f"{self.session_name} | Sleep before buy skin {5}s. Skin name: {skin['name']}")
+                                await asyncio.sleep(delay=5)
+                                status = await self.buy_skin(http_client, skin['id'])
+                                if status:
+                                    balance -= skin['price']
+                                else:
+                                    break
 
                     earn_for_tap = profile_data['level'] + profile_data['boosts']['BoostEarnPerTap']['level']
                     while available_energy > earn_for_tap:
