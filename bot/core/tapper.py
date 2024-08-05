@@ -544,27 +544,14 @@ class Tapper:
 
                     tasks = await self.get_tasks(http_client=http_client)
 
-                    daily_task = tasks[-1]
-                    rewards = daily_task['rewardsByDays']
-                    is_completed = daily_task['isCompleted']
-                    days = daily_task['days']
-
                     logger.info(f"{self.session_name} | Start completion tasks...")
                     for task in tasks:
-                        link = task.get("link", "")
-                        if task["isCompleted"] == False and ("https://" in link):
-                            logger.info(f"{self.session_name} | Attempting to complete Youtube Or Twitter task...")
+                        if task["isCompleted"] is False:
+                            logger.info(f"{self.session_name} | <lr>Attempting to complete task...</lr>")
 
                             await self.complete_task(http_client, task["id"])
                             await asyncio.sleep(delay=3)
                             logger.success(f"{self.session_name} |  Task completed - id: {task['id']}")
-
-
-                    if is_completed is False:
-                        status = await self.complete_task(http_client=http_client, task_id="streak_days")
-                        if status is True:
-                            logger.success(f"{self.session_name} | Successfully get daily reward | "
-                                           f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
 
                     if settings.AUTO_CLAIM_DAILY_CIPHER is True:
                         if "dailyCipher" in config_data:
