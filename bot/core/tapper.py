@@ -741,28 +741,21 @@ class Tapper:
                                 if balance - price < settings.BALANCE_TO_SAVE:
                                     continue
 
-                                # logger.info(f"{self.session_name} | <y>{upgrade}</y>")
+                                if upgrade.get('expiresAt') is not None:
+                                    significance *= settings.MULTIPLIER_FOR_CARDS_WITH_EXPIRE
 
-                                if upgrade.get('expiresAt') is None:
-                                    if significance > settings.MIN_SIGNIFICANCE:
-                                        queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
-                                else:
-                                    date_expires = datetime.strptime(upgrade['expiresAt'],"%Y-%m-%dT%H:%M:%S.%fZ")
-                                    date_now = datetime.now()
-                                    timediff = date_expires - date_now
-                                    # logger.info(f"{self.session_name} | <y>{upgrade['name']}</y> expires in <y>{timediff.total_seconds()}</y>")
-                                    if timediff.total_seconds()/3600 > 2*(100/(significance*100)):
-                                        queue.append([upgrade_id, significance, level, price, profit, current_profit, upgrade['name']])
+                                if significance > settings.MIN_SIGNIFICANCE:
+                                    queue.append([upgrade_id, significance, level, price, profit, current_profit,
+                                                  upgrade['name']])
 
                             logger.info(f"{self.session_name} | <lg>Max level of cards: {max_level} | "
                                         f"Cards on max level: {cards_on_max_level} | "
                                         f"Max significance: {max_significance} </lg>")
+
                             queue.sort(key=operator.itemgetter(1), reverse=True)
+                            queue = queue[:10]
 
-                            if len(queue) == 0:
-                                break
-
-                            count = 0
+                            resort = False
                             for upgrade in queue:
                                 if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
                                     logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
@@ -781,14 +774,9 @@ class Tapper:
                                             f"Balance <e>{balance:,}</e>")
 
                                         await asyncio.sleep(delay=1)
-                                        if balance < settings.BALANCE_TO_SAVE:
-                                            resort = False
+                                        resort = True
                                         break
 
-                                count += 1
-                                if count == 10 or count == len(queue) or balance < settings.BALANCE_TO_SAVE:
-                                    resort = False
-                                    break
 
                     earn_for_tap = profile_data['level'] + profile_data['boosts']['BoostEarnPerTap']['level']
                     while available_energy > earn_for_tap:
