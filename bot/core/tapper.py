@@ -734,7 +734,10 @@ class Tapper:
                                 current_profit = upgrade['currentProfitPerHour']
                                 profit = upgrade['profitPerHourDelta']
 
-                                significance = (profit + current_profit) / price if price > 0 else 0
+                                if level == 0 and settings.PRIORITIZED_FIRST_LEVEL:
+                                    significance = 1
+                                else:
+                                    significance = (profit + current_profit) / price if price > 0 else 0
 
                                 if balance - price < settings.BALANCE_TO_SAVE:
                                     continue

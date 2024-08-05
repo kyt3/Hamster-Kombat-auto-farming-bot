@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     MAX_LEVEL: int = 20
     MIN_SIGNIFICANCE: float = 0.1
     MULTIPLIER_FOR_CARDS_WITH_EXPIRE: float = 1
+    PRIORITIZED_FIRST_LEVEL: bool = False
 
     APPLY_DAILY_ENERGY: bool = True
     APPLY_DAILY_TURBO: bool = True
