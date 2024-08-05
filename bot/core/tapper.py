@@ -305,7 +305,7 @@ class Tapper:
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/login-client',
                                               json={"appToken": "d28721be-fd2d-4b45-869e-9f253b554e50",
-                                                    "clientId": f"{cliend_id}", "clientOrigin": "deviceid"})
+                                                    "clientId": cliend_id, "clientOrigin": "deviceid"})
             response_text = await response.text()
             response.raise_for_status()
 
@@ -326,7 +326,7 @@ class Tapper:
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/register-event',
                                               json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f",
-                                                    "eventId": f"{uuid.uuid4()}", "eventOrigin": "undefined"})
+                                                    "eventId": uuid.uuid4(), "eventOrigin": "undefined"})
             response_text = await response.text()
             response.raise_for_status()
 
@@ -368,7 +368,7 @@ class Tapper:
             logger.info(f"{self.session_name} | Apply promo code... ")
 
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/apply-promo',
-                                              json={"promoCode": f"{promo_code}"})
+                                              json={"promoCode": promo_code})
             response_text = await response.text()
             response.raise_for_status()
 
