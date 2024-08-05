@@ -506,6 +506,8 @@ class Tapper:
                         logger.error(f"{self.session_name} | <lr>Error 10 times in a row. Exit.</lr>")
                         break
 
+                    delay_after_taps = settings.SLEEP_BY_MIN_ENERGY
+
                     if time() - access_token_created_time >= 3600:
                         access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
@@ -719,7 +721,6 @@ class Tapper:
                                 data for data in upgrades
                                 if data['isAvailable'] is True
                                    and data['isExpired'] is False
-                                   and data.get('cooldownSeconds', 0) == 0
                                    and data.get('maxLevel', data['level']) >= data['level']
                                    # and (data.get('condition') is None)
                                         # or data['condition'].get('_type') != 'SubscribeTelegramChannel')
@@ -727,12 +728,21 @@ class Tapper:
 
                             queue = []
 
+                            min_cooldown = delay_after_taps
                             for upgrade in available_upgrades:
                                 upgrade_id = upgrade['id']
                                 level = upgrade['level']
                                 price = upgrade['price']
                                 current_profit = upgrade['currentProfitPerHour']
                                 profit = upgrade['profitPerHourDelta']
+
+                                cooldown = upgrade.get('cooldownSeconds', 0)
+
+                                if min_cooldown > cooldown > 0:
+                                    min_cooldown = cooldown
+
+                                if cooldown > 0:
+                                    continue
 
                                 if level == 0 and settings.PRIORITIZED_FIRST_LEVEL:
                                     significance = 1
@@ -749,6 +759,7 @@ class Tapper:
                                     queue.append([upgrade_id, significance, level, price, profit, current_profit,
                                                   upgrade['name']])
 
+                            delay_after_taps = min_cooldown
                             queue.sort(key=operator.itemgetter(1), reverse=True)
                             queue = queue[:10]
 
@@ -807,7 +818,6 @@ class Tapper:
                                            f"Balance: <c>{balance:,}</c> (<g>+{calc_taps}</g>) | "
                                            f"Earn every hour: <y>{earn_on_hour:,}</y> | Total: <e>{total:,}</e>")
 
-
                     boosts = await self.get_boosts(http_client=http_client)
                     energy_boost = next((boost for boost in boosts if boost['id'] == 'BoostFullAvailableTaps'), {})
 
@@ -827,9 +837,9 @@ class Tapper:
                             continue
                     if available_energy < earn_for_tap:
                         logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
-                        logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
+                        logger.info(f"{self.session_name} | Sleep {delay_after_taps}s")
 
-                        await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
+                        await asyncio.sleep(delay=delay_after_taps)
 
                     errors_in_a_row = 0
 
