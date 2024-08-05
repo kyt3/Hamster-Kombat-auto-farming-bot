@@ -161,11 +161,11 @@ class Tapper:
 
             return False
 
-    async def get_daily(self, http_client: aiohttp.ClientSession):
+    async def complete_task(self, http_client: aiohttp.ClientSession, task_id: str):
         response_text = ''
         try:
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/check-task',
-                                              json={'taskId': "streak_days"})
+                                              json={'taskId': task_id})
             response_text = await response.text()
             response.raise_for_status()
 
@@ -547,8 +547,19 @@ class Tapper:
                     is_completed = daily_task['isCompleted']
                     days = daily_task['days']
 
+                    logger.info(f"{self.session_name} | Start completion tasks...")
+                    for task in tasks:
+                        link = task.get("link", "")
+                        if task["isCompleted"] == False and ("https://" in link):
+                            logger.info(f"{self.session_name} | Attempting to complete Youtube Or Twitter task...")
+
+                            await self.complete_task(http_client, task["id"])
+                            await asyncio.sleep(delay=3)
+                            logger.success(f"{self.session_name} |  Task completed - id: {task['id']}")
+
+
                     if is_completed is False:
-                        status = await self.get_daily(http_client=http_client)
+                        status = await self.complete_task(http_client=http_client, task_id="streak_days")
                         if status is True:
                             logger.success(f"{self.session_name} | Successfully get daily reward | "
                                            f"Days: <m>{days}</m> | Reward coins: {rewards[days - 1]['rewardCoins']}")
