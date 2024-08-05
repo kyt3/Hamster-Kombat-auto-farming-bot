@@ -755,9 +755,6 @@ class Tapper:
 
                                 cooldown = upgrade.get('cooldownSeconds', 0)
 
-                                if min_cooldown > cooldown > 0:
-                                    min_cooldown = cooldown
-
                                 if cooldown > 0:
                                     continue
 
@@ -774,7 +771,7 @@ class Tapper:
 
                                 if significance > settings.MIN_SIGNIFICANCE:
                                     queue.append([upgrade_id, significance, level, price, profit, current_profit,
-                                                  upgrade['name']])
+                                                  upgrade['name'], cooldown])
 
                             delay_after_taps = min_cooldown
                             queue.sort(key=operator.itemgetter(1), reverse=True)
@@ -782,6 +779,9 @@ class Tapper:
 
                             resort = False
                             for upgrade in queue:
+                                if upgrade[7] > 0:
+                                    continue
+
                                 if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
                                     logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
                                     await asyncio.sleep(delay=5)
