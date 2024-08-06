@@ -566,18 +566,19 @@ class Tapper:
                     last_passive_earn = profile_data['lastPassiveEarn']
                     earn_on_hour = profile_data['earnPassivePerHour']
 
-                    logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn:,}</g> | "
-                                f"Earn every hour: <y>{earn_on_hour:,}</y>")
-
                     available_energy = profile_data.get('availableTaps', 0)
                     balance = int(profile_data.get('balanceCoins', 0))
+
+                    logger.info(f"{self.session_name} | Last passive earn: <g>+{last_passive_earn:,}</g> | "
+                                f"Earn every hour: <y>{earn_on_hour:,}</y> | "
+                                f"<e>Balance: {balance:,}</e>")
 
                     tasks = await self.get_tasks(http_client=http_client)
 
                     logger.info(f"{self.session_name} | Start completion tasks...")
                     for task in tasks:
                         if task["isCompleted"] is False:
-                            logger.info(f"{self.session_name} | <lr>Attempting to complete task...</lr>")
+                            logger.info(f"{self.session_name} | <lr>Try to complete task...</lr>")
 
                             await self.complete_task(http_client, task["id"])
                             await asyncio.sleep(delay=3)
