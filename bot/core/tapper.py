@@ -887,7 +887,6 @@ class Tapper:
 
                             available_energy = player_data.get('availableTaps', 0)
                             new_balance = int(player_data.get('balanceCoins', 0))
-                            calc_taps = new_balance - balance
                             balance = new_balance
                             total = int(player_data.get('totalCoins', 0))
                             earn_on_hour = player_data['earnPassivePerHour']
