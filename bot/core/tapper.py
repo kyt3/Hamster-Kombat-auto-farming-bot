@@ -237,7 +237,7 @@ class Tapper:
 
             seconds_to_guess = response_json["dailyKeysMiniGame"]["remainSecondsToGuess"]
 
-            wait_time = random.randint(int(seconds_to_guess/2), int(seconds_to_guess - 5))
+            wait_time = random.randint(int(seconds_to_guess / 2), int(seconds_to_guess - 5))
 
             if wait_time < 0:
                 logger.error(f"{self.session_name} | Unable to claim mini game. Wait time less than 0")
@@ -301,7 +301,8 @@ class Tapper:
         try:
             logger.info(f"{self.session_name} | Login in promo API... ")
 
-            cliend_id = str(datetime.timestamp(datetime.now())) + "-" + (str(random.randint(1000000000000000000, 9999999999999999999))[: 19])
+            cliend_id = str(datetime.timestamp(datetime.now())) + "-" + (
+            str(random.randint(1000000000000000000, 9999999999999999999))[: 19])
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/login-client',
                                               json={"appToken": app_token,
@@ -358,7 +359,7 @@ class Tapper:
 
             return response_json["promoCode"]
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
+            logger.error(f"{self.session_name} | Unknown error while create promo event: {error} | "
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
@@ -374,30 +375,44 @@ class Tapper:
 
             logger.success(f"{self.session_name} | Successful applied promo code")
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while register promo event: {error} | "
+            logger.error(f"{self.session_name} | Unknown error while apply promo: {error} | "
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
-    async def finish_bike_game(self):
-        app_token = "d28721be-fd2d-4b45-869e-9f253b554e50"
-        promo_id = "43e35910-c168-4634-ad4f-52fd764a843f"
+    async def finish_game(self, http_client: aiohttp.ClientSession, promo_id: str, sleep_time: int) -> str:
+        code_available = False
 
-        async with aiohttp.ClientSession() as http_client:
-            http_client.headers["Content-Type"] = f"application/json; charset=utf-8"
-            http_client.headers["Host"] = f"api.gamepromo.io"
+        while not code_available:
+            logger.info(f"{self.session_name} | Sleep {sleep_time} seconds before register event ")
+            await asyncio.sleep(delay=sleep_time)
+            code_available = await self.game_promo_register_event(http_client, promo_id)
 
-            client_token = await self.game_promo_login(http_client, app_token)
-            http_client.headers["Authorization"] = f"Bearer {client_token}"
+        promo_code = await self.create_promo_code(http_client, promo_id)
+        return promo_code
 
-            code_available = False
+    async def get_app_token_from_promo_id_of_game(self, promo_id: str) -> str:
+        match promo_id:
+            case "c4480ac7-e178-4973-8061-9ed5b2e17954":
+                return "82647f43-3f87-402d-88dd-09a90025313f"
+            case "fe693b26-b342-4159-8808-15e3ff7f8767":
+                return "74ee0b5b-775e-4bee-974f-63e7f4d5bacb"
+            case "b4170868-cef0-424f-8eb9-be0622e8e8e3":
+                return "d1690a07-3780-4068-810f-9b5bbf2931b2"
+            case "43e35910-c168-4634-ad4f-52fd764a843f":
+                return "d28721be-fd2d-4b45-869e-9f253b554e50"
+            case _:
+                raise Exception
 
-            while not code_available:
-                logger.info(f"{self.session_name} | Sleep 60 seconds before register event ")
-                await asyncio.sleep(delay=60)
-                code_available = await self.game_promo_register_event(http_client, promo_id)
-
-            promo_code = await self.create_promo_code(http_client, promo_id)
-            return promo_code
+    async def get_sleep_time_from_promo_id_of_game(self, promo_id: str) -> int:
+        match promo_id:
+            case "c4480ac7-e178-4973-8061-9ed5b2e17954":
+                return 180
+            case "fe693b26-b342-4159-8808-15e3ff7f8767":
+                return 180
+            case "b4170868-cef0-424f-8eb9-be0622e8e8e3":
+                return 60
+            case "43e35910-c168-4634-ad4f-52fd764a843f":
+                return 60
 
     async def get_promos(self, http_client: aiohttp.ClientSession) -> dict:
         response_text = ''
@@ -494,7 +509,8 @@ class Tapper:
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
-    async def send_taps(self, http_client: aiohttp.ClientSession, available_energy: int, taps: int, timestamp: int) -> dict[str]:
+    async def send_taps(self, http_client: aiohttp.ClientSession, available_energy: int, taps: int, timestamp: int) -> \
+    dict[str]:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.hamsterkombatgame.io/clicker/tap',
@@ -657,11 +673,11 @@ class Tapper:
                                     logger.info(f"{self.session_name} | "
                                                 f"<lr>Daily combo is not applicable</lr>, you can only purchase {possible_cards_count} of {need_cards_count} cards")
 
-
                                 logger.info(f"{self.session_name} | "
                                             f"<lr>Daily combo common price is </lr><ly>{common_price:,}</ly> coins")
 
-                                if common_price < upgrades_data['dailyCombo']['bonusCoins'] and balance > common_price and is_combo_accessible:
+                                if common_price < upgrades_data['dailyCombo'][
+                                    'bonusCoins'] and balance > common_price and is_combo_accessible:
                                     for upgrade in available_combo_cards:
                                         upgrade_id = upgrade['id']
                                         level = upgrade['level']
@@ -712,25 +728,41 @@ class Tapper:
                         else:
                             logger.info(f"{self.session_name} | <ly>Combo already claimed</ly>")
 
-                    if settings.AUTO_FINISH_BIKE_GAME is True:
+                    if settings.AUTO_FINISH_GAMES is True:
                         promos_data = await self.get_promos(http_client=http_client)
 
-                        try:
-                            max_keys_per_day = int(promos_data["promos"][0]["keysPerDay"])
-                            keys_remain = max_keys_per_day - promos_data["states"][0]["receiveKeysToday"]
-                        except Exception:
-                            logger.error(f"{self.session_name} | <lr>Something wrong with get promo response. Response: {promos_data}</lr>")
-                            keys_remain = 0
+                        for promo in promos_data["promos"]:
+                            keys_remain = promo["keysPerDay"]
 
-                        if keys_remain > 0:
-                            while keys_remain > 0:
-                                promo_code = await self.finish_bike_game()
-                                logger.info(f"{self.session_name} | Sleep 10 seconds before apply promo...")
-                                await asyncio.sleep(delay=10)
-                                await self.apply_promo(http_client,promo_code)
-                                keys_remain -= 1
-                        else:
-                            logger.info(f"{self.session_name} | <ly>Bike game already claimed</ly>")
+                            for state in promos_data["states"]:
+                                if promo["promoId"] == state["promoId"]:
+                                    keys_remain -= state["receiveKeysToday"]
+                                    break
+
+                            title = promo["title"]["en"]
+                            if keys_remain > 0:
+
+                                logger.info(f"{self.session_name} | <lr>Start completing {title} game...</lr>")
+
+                                promo_id = promo["promoId"]
+                                app_token = await self.get_app_token_from_promo_id_of_game(promo_id)
+                                sleep_time = await self.get_sleep_time_from_promo_id_of_game(promo_id)
+
+                                async with aiohttp.ClientSession() as http_client_promo:
+                                    http_client_promo.headers["Content-Type"] = f"application/json; charset=utf-8"
+                                    http_client_promo.headers["Host"] = f"api.gamepromo.io"
+
+                                    client_token = await self.game_promo_login(http_client, app_token)
+                                    http_client_promo.headers["Authorization"] = f"Bearer {client_token}"
+
+                                    while keys_remain > 0:
+                                        promo_code = await self.finish_game(http_client_promo, promo_id, sleep_time)
+                                        logger.info(f"{self.session_name} | Sleep 10 seconds before apply promo...")
+                                        await asyncio.sleep(delay=10)
+                                        await self.apply_promo(http_client, promo_code)
+                                        keys_remain -= 1
+                            else:
+                                logger.info(f"{self.session_name} | <ly>{title} game already claimed</ly>")
 
                     if settings.AUTO_UPGRADE is True and balance > settings.BALANCE_TO_SAVE:
                         resort = True
@@ -743,8 +775,8 @@ class Tapper:
                                 if data['isAvailable'] is True
                                    and data['isExpired'] is False
                                    and data.get('maxLevel', data['level']) >= data['level']
-                                   # and (data.get('condition') is None)
-                                        # or data['condition'].get('_type') != 'SubscribeTelegramChannel')
+                                # and (data.get('condition') is None)
+                                # or data['condition'].get('_type') != 'SubscribeTelegramChannel')
                             ]
 
                             queue = []
@@ -799,7 +831,7 @@ class Tapper:
                                         logger.success(
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour:,}</y> (<g>+{upgrade[4]:,}--->{upgrade[4]+upgrade[5]:,}</g>) | "
+                                            f"Earn every hour: <y>{earn_on_hour:,}</y> (<g>+{upgrade[4]:,}--->{upgrade[4] + upgrade[5]:,}</g>) | "
                                             f"Price <y>{upgrade[3]:,}</y> | "
                                             f"Balance <e>{balance:,}</e>")
 
@@ -818,7 +850,8 @@ class Tapper:
                         for skin in skins:
                             if skin['id'] not in bought_skins and balance > skin['price'] \
                                     and balance - skin['price'] > settings.BALANCE_TO_SAVE:
-                                logger.info(f"{self.session_name} | Sleep before buy skin {5}s. Skin name: {skin['name']}")
+                                logger.info(
+                                    f"{self.session_name} | Sleep before buy skin {5}s. Skin name: {skin['name']}")
                                 await asyncio.sleep(delay=5)
                                 status = await self.buy_skin(http_client, skin['id'])
                                 if status:

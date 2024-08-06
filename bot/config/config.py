@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     AUTO_CLAIM_DAILY_CIPHER: bool = False
     AUTO_FINISH_MINI_GAME: bool = False
     AUTO_BUY_COMBO: bool = False
-    AUTO_FINISH_BIKE_GAME: bool = False
+    AUTO_FINISH_GAMES: bool = False
     BUY_ALL_SKINS: bool = False
 
 settings = Settings()
