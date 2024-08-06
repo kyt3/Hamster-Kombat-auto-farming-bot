@@ -401,7 +401,8 @@ class Tapper:
             case "43e35910-c168-4634-ad4f-52fd764a843f":
                 return "d28721be-fd2d-4b45-869e-9f253b554e50"
             case _:
-                raise Exception
+                logger.error(f"{self.session_name} | Unknown promo token check for new games...")
+                return None
 
     async def get_sleep_time_from_promo_id_of_game(self, promo_id: str) -> int:
         match promo_id:
@@ -746,6 +747,10 @@ class Tapper:
 
                                 promo_id = promo["promoId"]
                                 app_token = await self.get_app_token_from_promo_id_of_game(promo_id)
+
+                                if app_token is None:
+                                    continue
+
                                 sleep_time = await self.get_sleep_time_from_promo_id_of_game(promo_id)
 
                                 async with aiohttp.ClientSession() as http_client_promo:
