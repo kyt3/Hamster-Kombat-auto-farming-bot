@@ -893,7 +893,7 @@ class Tapper:
                             earn_on_hour = player_data['earnPassivePerHour']
 
                             logger.success(f"{self.session_name} | Successful tapped! | "
-                                           f"Balance: <c>{balance:,}</c> (<g>+{calc_taps}</g>) | "
+                                           f"Balance: <c>{balance:,}</c> | "
                                            f"Earn every hour: <y>{earn_on_hour:,}</y> | Total: <e>{total:,}</e>")
 
                     boosts = await self.get_boosts(http_client=http_client)
