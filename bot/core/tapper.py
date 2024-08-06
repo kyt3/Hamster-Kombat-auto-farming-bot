@@ -776,7 +776,7 @@ class Tapper:
 
                             delay_after_taps = min_cooldown
                             queue.sort(key=operator.itemgetter(1), reverse=True)
-                            queue = queue[:10]
+                            queue = queue[:5]
 
                             resort = False
                             for upgrade in queue:
