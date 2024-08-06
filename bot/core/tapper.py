@@ -326,7 +326,7 @@ class Tapper:
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/register-event',
                                               json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f",
-                                                    "eventId": uuid.uuid4(), "eventOrigin": "undefined"})
+                                                    "eventId": f"{uuid.uuid4()}", "eventOrigin": "undefined"})
             response_text = await response.text()
             response.raise_for_status()
 
