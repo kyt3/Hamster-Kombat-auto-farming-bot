@@ -777,13 +777,14 @@ class Tapper:
 
                             resort = False
                             for upgrade in queue:
+                                price = upgrade[3]
                                 if upgrade[7] > 0:
                                     continue
 
                                 if balance - price < settings.BALANCE_TO_SAVE:
                                     continue
 
-                                if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
+                                if balance > price and upgrade[2] <= settings.MAX_LEVEL:
                                     logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
                                     await asyncio.sleep(delay=5)
 
@@ -791,7 +792,7 @@ class Tapper:
 
                                     if status is True:
                                         earn_on_hour += upgrade[4]
-                                        balance -= upgrade[3]
+                                        balance -= price
                                         logger.success(
                                             f"{self.session_name} | "
                                             f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
