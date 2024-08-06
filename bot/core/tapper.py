@@ -764,9 +764,6 @@ class Tapper:
                                 else:
                                     significance = (profit + current_profit) / price if price > 0 else 0
 
-                                if balance - price < settings.BALANCE_TO_SAVE:
-                                    continue
-
                                 if upgrade.get('expiresAt') is not None:
                                     significance *= settings.MULTIPLIER_FOR_CARDS_WITH_EXPIRE
 
@@ -781,6 +778,9 @@ class Tapper:
                             resort = False
                             for upgrade in queue:
                                 if upgrade[7] > 0:
+                                    continue
+
+                                if balance - price < settings.BALANCE_TO_SAVE:
                                     continue
 
                                 if balance > upgrade[3] and upgrade[2] <= settings.MAX_LEVEL:
