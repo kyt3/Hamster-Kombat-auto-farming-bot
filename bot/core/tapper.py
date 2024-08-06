@@ -756,8 +756,8 @@ class Tapper:
 
                                 cooldown = upgrade.get('cooldownSeconds', 0)
 
-                                if cooldown > 0:
-                                    continue
+                                if min_cooldown > cooldown > 0:
+                                    min_cooldown = cooldown
 
                                 if level == 0 and settings.PRIORITIZED_FIRST_LEVEL:
                                     significance = 1
