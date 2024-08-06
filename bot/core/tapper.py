@@ -296,7 +296,7 @@ class Tapper:
             await asyncio.sleep(delay=3)
             return False
 
-    async def game_promo_login(self, http_client: aiohttp.ClientSession) -> str:
+    async def game_promo_login(self, http_client: aiohttp.ClientSession, app_token: str) -> str:
         response_text = ''
         try:
             logger.info(f"{self.session_name} | Login in promo API... ")
@@ -304,7 +304,7 @@ class Tapper:
             cliend_id = str(datetime.timestamp(datetime.now())) + "-" + (str(random.randint(1000000000000000000, 9999999999999999999))[: 19])
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/login-client',
-                                              json={"appToken": "d28721be-fd2d-4b45-869e-9f253b554e50",
+                                              json={"appToken": app_token,
                                                     "clientId": cliend_id, "clientOrigin": "deviceid"})
             response_text = await response.text()
             response.raise_for_status()
@@ -319,13 +319,13 @@ class Tapper:
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
-    async def game_promo_register_event(self, http_client: aiohttp.ClientSession) -> bool:
+    async def game_promo_register_event(self, http_client: aiohttp.ClientSession, promo_id: str) -> bool:
         response_text = ''
         try:
             logger.info(f"{self.session_name} | Register promo event... ")
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/register-event',
-                                              json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f",
+                                              json={"promoId": promo_id,
                                                     "eventId": f"{uuid.uuid4()}", "eventOrigin": "undefined"})
             response_text = await response.text()
             response.raise_for_status()
@@ -342,13 +342,13 @@ class Tapper:
 
             return False
 
-    async def create_promo_code(self, http_client: aiohttp.ClientSession) -> str:
+    async def create_promo_code(self, http_client: aiohttp.ClientSession, promo_id: str) -> str:
         response_text = ''
         try:
             logger.info(f"{self.session_name} | Creating promo code... ")
 
             response = await http_client.post(url='https://api.gamepromo.io/promo/create-code',
-                                              json={"promoId": "43e35910-c168-4634-ad4f-52fd764a843f"})
+                                              json={"promoId": promo_id})
             response_text = await response.text()
             response.raise_for_status()
 
@@ -379,11 +379,14 @@ class Tapper:
             await asyncio.sleep(delay=3)
 
     async def finish_bike_game(self):
+        app_token = "d28721be-fd2d-4b45-869e-9f253b554e50"
+        promo_id = "43e35910-c168-4634-ad4f-52fd764a843f"
+
         async with aiohttp.ClientSession() as http_client:
             http_client.headers["Content-Type"] = f"application/json; charset=utf-8"
             http_client.headers["Host"] = f"api.gamepromo.io"
 
-            client_token = await self.game_promo_login(http_client)
+            client_token = await self.game_promo_login(http_client, app_token)
             http_client.headers["Authorization"] = f"Bearer {client_token}"
 
             code_available = False
@@ -391,9 +394,9 @@ class Tapper:
             while not code_available:
                 logger.info(f"{self.session_name} | Sleep 60 seconds before register event ")
                 await asyncio.sleep(delay=60)
-                code_available = await self.game_promo_register_event(http_client)
+                code_available = await self.game_promo_register_event(http_client, promo_id)
 
-            promo_code = await self.create_promo_code(http_client)
+            promo_code = await self.create_promo_code(http_client, promo_id)
             return promo_code
 
     async def get_promos(self, http_client: aiohttp.ClientSession) -> dict:
