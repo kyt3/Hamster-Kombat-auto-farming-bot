@@ -828,7 +828,7 @@ class Tapper:
 
                                 logger.info(
                                     f"{self.session_name} | "
-                                    f"<lr>Processing {upgrade_name} of {upgrade_level} lvl | "
+                                    f"<lr>Processing '{upgrade_name}' of {upgrade_level} lvl | "
                                     f"Significance: {upgrade_significance} | "
                                     f"Cooldown: {upgrade_cooldown}s | "
                                     f"Price {upgrade_price:,} | "
