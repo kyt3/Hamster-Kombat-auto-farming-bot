@@ -817,27 +817,43 @@ class Tapper:
 
                             resort = False
                             for upgrade in queue:
-                                price = upgrade[3]
-                                if upgrade[7] > 0:
+                                upgrade_id = upgrade[0]
+                                upgrade_significance = upgrade[1]
+                                upgrade_level = upgrade[2]
+                                upgrade_price = upgrade[3]
+                                upgrade_profit = upgrade[4]
+                                upgrade_current_profit = upgrade[5]
+                                upgrade_name = upgrade[6]
+                                upgrade_cooldown = upgrade[7]
+
+                                logger.info(
+                                    f"{self.session_name} | "
+                                    f"<lr>Processing {upgrade_name} of {upgrade_level} lvl | "
+                                    f"Significance: {upgrade_significance} | "
+                                    f"Cooldown: {upgrade_cooldown}s | "
+                                    f"Price {upgrade_price:,} | "
+                                    f"Balance {balance:,}</lr>")
+
+                                if upgrade_cooldown > 0:
                                     continue
 
-                                if balance - price < settings.BALANCE_TO_SAVE:
+                                if balance - upgrade_price < settings.BALANCE_TO_SAVE:
                                     continue
 
-                                if balance > price and upgrade[2] <= settings.MAX_LEVEL:
-                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade[6]}</e>")
+                                if balance > upgrade_price and upgrade_level <= settings.MAX_LEVEL:
+                                    logger.info(f"{self.session_name} | Sleep 5s before upgrade <e>{upgrade_name}</e>")
                                     await asyncio.sleep(delay=5)
 
-                                    status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade[0])
+                                    status = await self.buy_upgrade(http_client=http_client, upgrade_id=upgrade_id)
 
                                     if status is True:
-                                        earn_on_hour += upgrade[4]
-                                        balance -= price
+                                        earn_on_hour += upgrade_profit
+                                        balance -= upgrade_price
                                         logger.success(
                                             f"{self.session_name} | "
-                                            f"Successfully upgraded <e>{upgrade[6]}</e> to <m>{upgrade[2]}</m> lvl | "
-                                            f"Earn every hour: <y>{earn_on_hour:,}</y> (<g>+{upgrade[4]:,}--->{upgrade[4] + upgrade[5]:,}</g>) | "
-                                            f"Price <y>{upgrade[3]:,}</y> | "
+                                            f"Successfully upgraded <e>{upgrade_name}</e> to <m>{upgrade_level}</m> lvl | "
+                                            f"Earn every hour: <y>{earn_on_hour:,}</y> (<g>+{upgrade_profit:,}--->{upgrade_profit + upgrade_current_profit:,}</g>) | "
+                                            f"Price <y>{upgrade_price:,}</y> | "
                                             f"Balance <e>{balance:,}</e>")
 
                                         await asyncio.sleep(delay=1)
