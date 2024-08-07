@@ -799,7 +799,7 @@ class Tapper:
                                 if min_cooldown > cooldown > 0:
                                     min_cooldown = cooldown
 
-                                if level == 0 and settings.PRIORITIZED_FIRST_LEVEL:
+                                if level == 1 and settings.PRIORITIZED_FIRST_LEVEL:
                                     significance = 1
                                 else:
                                     significance = (profit + current_profit) / price if price > 0 else 0
