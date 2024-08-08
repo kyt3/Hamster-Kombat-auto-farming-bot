@@ -440,6 +440,19 @@ class Tapper:
             response.raise_for_status()
 
             response_json = await response.json()
+            response_json['config-version'] = response.headers['config-version']
+
+            response = await http_client.get(url=f"https://api.hamsterkombatgame.io/clicker/config/{response.headers['config-version']}")
+            response.raise_for_status()
+
+            config_json = await response.json()
+
+            for skin in response_json['skins']:
+                for skin_in_config in config_json['config']['skins']:
+                    if skin['id'] == skin_in_config['id']:
+                        skin['price'] = skin_in_config['price']
+                        skin['name'] = skin_in_config['name']
+                        break
 
             return response_json
         except Exception as error:
@@ -862,7 +875,8 @@ class Tapper:
 
                     if settings.BUY_ALL_SKINS:
                         balance = int(profile_data.get('balanceCoins', 0))
-                        skins = config_data['clickerConfig']['skins']
+                        skins = await self.get_skin(http_client)
+                        skins = skins['skins']
 
                         bought_skins = []
                         for skin in profile_data['skin']['available']:
